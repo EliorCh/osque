@@ -63,6 +63,12 @@ h2{font-size:1.15rem;margin:0}
 .qcard>*,.part>*,.sol>*,.slot>*{min-width:0}
 .qcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:grid;gap:12px;min-width:0}
 .qhead{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:.82rem}
+.rep{font-size:.88rem;color:var(--ink-2);display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline}
+.rep .rk{border-radius:6px;padding:1px 8px;background:var(--warn-soft);color:var(--ink);font-weight:600}
+.rep.same .rk{background:var(--accent);color:var(--accent-ink)}
+.rep .mono{font-family:var(--f-mono);font-size:.85rem}
+.rep .lnk{background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;cursor:pointer;font:inherit}
+.rep .rn{color:var(--muted)}
 .tag{border-radius:6px;padding:1px 8px;background:var(--sunk);color:var(--ink-2)}
 .tag.exam{font-family:var(--f-mono);background:var(--ink);color:var(--surface);font-weight:600}
 .tag.type{background:var(--accent-soft);color:var(--ink)}
@@ -302,12 +308,22 @@ function esc(s){ return escapeHtml(String(s)).replace(/"/g,'&quot;'); }
 /* ---------- filtering ---------- */
 function filtered(){
   return Q.filter(q=> S.topics.includes(q.topic) && S.types.includes(q.type) &&
-    (S.only==='all' || (S.only==='wrong' && S.results[q.id] && S.results[q.id].s<1) || (S.only==='new' && !S.results[q.id]) || (S.only==='marked' && S.marked.includes(q.id))));
+    (S.only==='all' || (S.only==='wrong' && S.results[q.id] && S.results[q.id].s<1) || (S.only==='new' && !S.results[q.id]) || (S.only==='marked' && S.marked.includes(q.id)) || (S.only==='rep' && q.rep)));
 }
 function shuffle(a,seed){ a=a.slice(); let r=seed||Math.random; for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
 function rng(seed){ let x=seed>>>0||1; return ()=>{ x^=x<<13; x^=x>>>17; x^=x<<5; return ((x>>>0)%100000)/100000; }; }
 
 /* ---------- question card ---------- */
+function repLine(q, mode){
+  const item = r => { const o=QID[r.id]; const lab=`${esc(o.exam)} · שאלה ${esc(o.num)}`;
+    const a = mode==='exam' ? `<b class="mono">${lab}</b>` : `<button class="lnk mono" data-act="goto" data-id="${esc(r.id)}" title="${esc(o.examLabel)}">${lab}</button>`;
+    return `${a} <span class="rn">(${renderText(r.n)})</span>`; };
+  const same=q.rep.filter(r=>r.k==='same'), sim=q.rep.filter(r=>r.k!=='same');
+  let h='';
+  if(same.length) h+=`<div class="rep same"><span class="rk">חזרה במבחן אחר</span> ${same.map(item).join(' · ')}</div>`;
+  if(sim.length) h+=`<div class="rep"><span class="rk">שאלה דומה</span> ${sim.map(item).join(' · ')}</div>`;
+  return h;
+}
 // mode: 'practice' (immediate feedback), 'exam' (deferred), 'review' (everything shown)
 function card(q, mode, n){
   const marked = S.marked.includes(q.id);
@@ -315,6 +331,7 @@ function card(q, mode, n){
    <div class="qhead">${n?`<span class="tag">שאלה ${n}</span>`:''}<span class="tag exam" title="${esc(q.examLabel)}, ${esc(q.date)}">${esc(q.exam)} · שאלה ${esc(q.num)}</span>
    <span class="tag">${esc(TNAME[q.topic])}${q.sub?' · '+renderText(q.sub):''}</span><span class="tag type">${TYPENAME[q.type]}</span>
    <button class="star" data-act="mark" aria-pressed="${marked}" aria-label="סימון השאלה" title="סימון לחזרה">★</button></div>`;
+  if(q.rep) h += repLine(q, mode);
   h += rich(q.intro) + rich(q.q) + code(q.code) + table(q.table);
   if(q.image) h += `<details class="orig" open><summary>כפי שמופיע בטופס המבחן</summary><img src="${esc(q.image)}" alt="הטבלה מטופס המבחן המקורי" loading="lazy"></details>`;
   if(q.type==='mcq'){
@@ -442,7 +459,7 @@ function filtersHTML(showOnly){
   h += '<div class="frow"><span class="flabel">עוד לא</span>'+TOPICS.filter(t=>!t[2]).map(t=>chip('topic',t[0],t[1],cnt(t[0]),S.topics.includes(t[0]),'later')).join('')+'</div>';
   h += '<div class="frow"><span class="flabel">סוג</span>'+TYPES.map(t=>chip('type',t[0],t[1],Q.filter(q=>q.type===t[0]&&S.topics.includes(q.topic)).length,S.types.includes(t[0]))).join('')+
        '<span style="flex-basis:12px"></span><button class="chip" data-act="preset" data-p="covered">רק מה שנלמד</button><button class="chip" data-act="preset" data-p="all">כל הנושאים</button></div>';
-  if(showOnly) h += '<div class="frow"><span class="flabel">הצג</span>'+[['all','הכל'],['new','שלא ניסיתי'],['wrong','טעויות'],['marked','מסומנות ★']].map(o=>`<button class="chip" data-act="only" data-v="${o[0]}" aria-pressed="${S.only===o[0]}">${o[1]}</button>`).join('')+'</div>';
+  if(showOnly) h += '<div class="frow"><span class="flabel">הצג</span>'+[['all','הכל'],['new','שלא ניסיתי'],['wrong','טעויות'],['marked','מסומנות ★'],['rep','חזרו במבחנים']].map(o=>`<button class="chip" data-act="only" data-v="${o[0]}" aria-pressed="${S.only===o[0]}">${o[1]}</button>`).join('')+'</div>';
   return h+'</div>';
 }
 function chip(kind,v,label,n,on,cls){ return `<button class="chip ${cls||''}" data-act="f${kind}" data-v="${v}" aria-pressed="${on}">${esc(label)}<span class="n">${n}</span></button>`; }

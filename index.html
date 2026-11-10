@@ -55,7 +55,7 @@ h2{font-size:1.15rem;margin:0}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:14px 16px}
 .filters{display:grid;gap:10px;margin-bottom:16px}
 .frow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-.flabel{font-size:.78rem;letter-spacing:.04em;color:var(--muted);min-width:64px;font-weight:500}
+.flabel{font-size:.78rem;letter-spacing:.02em;color:var(--muted);min-width:92px;font-weight:600}
 .chip{border:1px solid var(--line);background:var(--surface);color:var(--ink-2);border-radius:999px;padding:3px 11px;font:inherit;font-size:.88rem;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
 .chip .n{font-family:var(--f-mono);font-size:.75rem;color:var(--muted)}
 .chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
@@ -135,8 +135,16 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center}
 .chip.tc[aria-pressed="true"]{background:color-mix(in srgb,var(--tc) 30%,var(--surface));border-color:var(--tc)}
 .tag.exam{font-family:var(--f-mono);background:var(--ink);color:var(--surface);font-weight:600}
 .tag.type{background:var(--accent-soft);color:var(--ink)}
-.star{margin-inline-start:auto;border:none;background:none;font-size:1.25rem;cursor:pointer;color:var(--muted);line-height:1}
-.star[aria-pressed="true"]{color:var(--warn)}
+.star{margin-inline-start:auto;border:1px solid var(--line);background:none;font:inherit;font-size:.8rem;border-radius:6px;padding:1px 8px;cursor:pointer;color:var(--ink-2)}
+.star:hover{border-color:var(--warn)}
+.star[aria-pressed="true"]{color:var(--warn);border-color:var(--warn);background:var(--warn-soft)}
+.src{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:8px}
+.back{display:inline-block;color:var(--ink-2);text-decoration:none;font-size:.9rem;font-weight:500;margin-bottom:10px}
+.back:hover{color:var(--accent)}
+.emsg{font-weight:600;margin-inline:6px}
+.empty{text-align:center;color:var(--ink-2)}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--surface);padding:8px 18px;border-radius:999px;font-size:.9rem;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:60}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .txt .ln{min-height:.5em}
 .txt .gap{height:.6em}
 .ltr{unicode-bidi:isolate;direction:ltr}
@@ -202,9 +210,9 @@ select,input[type=search]{font:inherit;border:1px solid var(--line);border-radiu
   <nav class="tabs" aria-label="מצבי עבודה">
     <a href="#practice" data-view="practice">תרגול</a>
     <a href="#exam" data-view="exam">סימולציית מבחן</a>
-    <a href="#browse" data-view="browse">כל המאגר</a>
+    <a href="#browse" data-view="browse">גלישה במאגר</a>
     <a href="#progress" data-view="progress">התקדמות</a>
-    <a id="studylink" class="ext" href="#" target="_blank" rel="noopener">אתר הלימוד ↗</a>
+    <a id="studylink" class="ext" href="#" target="_blank" rel="noopener">אתר הסיכום ↗</a>
   </nav>
 </div></header>
 <main class="wrap" id="app"></main>
@@ -398,7 +406,7 @@ function card(q, mode, n){
    <div class="qhead">${n?`<span class="tag">שאלה ${n}</span>`:''}<span class="tag exam" title="${esc(q.examLabel)}, ${esc(q.date)}">${esc(q.exam)} · שאלה ${esc(q.num)}</span>
    <span class="tag topic t-${q.topic}">${esc(TNAME[q.topic])}${q.sub?' · '+renderText(q.sub):''}</span><span class="tag type">${TYPENAME[q.type]}</span>
    ${mode==='exam'?'':'<button class="fbb" data-act="fbopen" data-k="report" title="דיווח על טעות או בעיה בשאלה">⚑ דיווח</button><button class="fbb" data-act="fbopen" data-k="ask" title="הכנת הודעה למרצה עם כל נתוני השאלה">✉ שאלה למרצה</button>'}
-   <button class="star" data-act="mark" aria-pressed="${marked}" aria-label="סימון השאלה" title="סימון לחזרה">★</button></div><div class="fbslot"></div>`;
+   <button class="star" data-act="mark" aria-pressed="${marked}">${marked?'★ מסומנת':'☆ סמן לחזרה'}</button></div><div class="fbslot"></div>`;
   if(q.rep) h += repLine(q, mode);
   h += rich(q.intro) + rich(q.q) + code(q.code) + table(q.table);
   if(q.image) h += `<details class="orig" open><summary>כפי שמופיע בטופס המבחן</summary><img src="${esc(q.image)}" alt="הטבלה מטופס המבחן המקורי" loading="lazy"></details>`;
@@ -412,12 +420,12 @@ function card(q, mode, n){
     const parts = q.parts && q.parts.length ? q.parts : [{label:null,q:'',answer:q.answer}];
     parts.forEach((p,i)=>{
       h += `<div class="part" data-pi="${i}">${p.label?`<div class="plabel" dir="ltr">${esc(p.label)}</div>`:''}${rich(p.q)}${code(p.code)}${table(p.table)}
-        ${mode==='review'?'':`<label class="myans"><span>התשובה שלי${mode==='exam'?'':' (נשמרת במכשיר הזה)'}</span><textarea dir="auto" rows="3" data-pi="${i}" data-save="${mode==='exam'?0:1}" placeholder="כתבו כאן את התשובה, ואז השוו לפתרון">${mode==='exam'?'':esc(myAns(q.id,i))}</textarea></label>`}
+        ${mode==='review'?'':`<label class="myans"><span>התשובה שלי${mode==='exam'?'':' (נשמרת במכשיר הזה)'}</span><textarea dir="auto" rows="3" data-pi="${i}" data-save="${mode==='exam'?0:1}" placeholder="כתוב כאן את התשובה שלך, ואז השווה לפתרון">${mode==='exam'?'':esc(myAns(q.id,i))}</textarea></label>`}
         <div class="bar">${mode==='review'?'':'<button class="btn ghost" data-act="reveal">הצג פתרון</button>'}</div><div class="slot"></div></div>`;
     });
     h += '<div class="slot final"></div>';
   }
-  h += '</article>';
+  h += `<div class="src">מקור: ${esc(q.examLabel)} (${esc(q.date)}) · שאלה ${esc(q.num)}</div></article>`;
   return h;
 }
 const ORD = {};
@@ -430,9 +438,9 @@ function optOrder(q, mode){
 }
 function solClosed(q, chosenOk){
   let h='<div class="sol">';
-  if(chosenOk!==undefined) h+=`<div class="verdict ${chosenOk?'good':'bad'}">${chosenOk?'נכון!':'לא נכון.'}</div>`;
+  if(chosenOk!==undefined) h+=`<div class="verdict ${chosenOk?'good':'bad'}">${chosenOk?'✓ נכון':'✗ טעות'}</div>`;
   const ans = q.type==='tf' ? (q.correct?'נכון':'לא נכון') : q.options[q.correct];
-  h += `<div><h4>התשובה</h4>${rich(ans)}</div>`;
+  h += `<div><h4>התשובה הנכונה</h4>${rich(ans)}</div>`;
   h += common(q, true);
   return h+'</div>';
 }
@@ -442,7 +450,7 @@ function common(q, withOfficial){
   if(q.note) h+=`<div class="note"><b>הערה על הפתרון הרשמי</b>${rich(q.note)}</div>`;
   if(withOfficial && q.official) h+=`<details class="off"><summary>הפתרון הרשמי של הקורס</summary>${rich(q.official)}</details>`;
   if(q.check) h+=`<div class="check">✓ ${renderText(q.check)}</div>`;
-  if(TSTUDY[q.topic]) h+=`<div class="study">חומר רקע: <a href="${STUDY}${TPAGE[q.topic]||''}" target="_blank" rel="noopener">${esc(TSTUDY[q.topic])}</a> באתר הלמידה</div>`;
+  if(TSTUDY[q.topic]) h+=`<div class="study">לחזרה על החומר: <a href="${STUDY}${TPAGE[q.topic]||''}" target="_blank" rel="noopener">${esc(TSTUDY[q.topic])}</a> באתר הסיכום</div>`;
   return h;
 }
 function treeSVG(t){
@@ -471,7 +479,7 @@ function richT(text, tree){
 function partSol(q, pi, grading){
   const parts = q.parts && q.parts.length ? q.parts : [{answer:q.answer}];
   let h = `<div class="sol"><div><h4>פתרון</h4>${richT(parts[pi].answer, parts[pi].tree)}${table(parts[pi].atable)}</div>`;
-  if(grading) h += `<div class="grade" data-pi="${pi}">איך הלך? <button class="chip g1" data-act="grade" data-g="1">ידעתי</button><button class="chip gh" data-act="grade" data-g="0.5">חלקית</button><button class="chip g0" data-act="grade" data-g="0">לא ידעתי</button></div>`;
+  if(grading) h += `<div class="grade" data-pi="${pi}">איך הלך לך? <button class="chip g1" data-act="grade" data-g="1">ידעתי</button><button class="chip gh" data-act="grade" data-g="0.5">חלקית</button><button class="chip g0" data-act="grade" data-g="0">לא ידעתי</button></div>`;
   return h+'</div>';
 }
 function finishOpen(art, q){
@@ -503,7 +511,7 @@ document.addEventListener('click', e=>{
   const art = b.closest('.qcard'); const q = art ? QID[art.dataset.id] : null;
   const act = b.dataset.act;
   const inExam = !!(EXAM && art && art.closest('#examlist'));
-  if(act==='mark'){ const i=S.marked.indexOf(q.id); if(i<0) S.marked.push(q.id); else S.marked.splice(i,1); b.setAttribute('aria-pressed', i<0); save(); return; }
+  if(act==='mark'){ const i=S.marked.indexOf(q.id); if(i<0) S.marked.push(q.id); else S.marked.splice(i,1); b.setAttribute('aria-pressed', i<0); b.textContent = i<0?'★ מסומנת':'☆ סמן לחזרה'; save(); toast(i<0?'השאלה סומנה':'הסימון הוסר'); return; }
   if(act==='mcq' || act==='tf'){
     if(inExam){ if(EXAM.submitted) return; art.querySelectorAll('.opt').forEach(o=>o.classList.remove('sel')); b.classList.add('sel'); return; }
     if(art.dataset.done) return; art.dataset.done='1';
@@ -563,8 +571,8 @@ function fbPanel(q,k){
   const hasMine = q.type==='open' && Object.keys(ANS[q.id]||{}).length;
   let name=''; try{ name=localStorage.getItem('os-mta-name')||''; }catch(e){}
   return `<div class="fb" data-k="ask"><h4>מייל למרצה על השאלה</h4>
-    <label>מה תרצו לשאול?<textarea rows="3" class="fbt" placeholder="למשל: לא הבנתי למה בסעיף 6.1 תהליך 45 נכנס לתנאי"></textarea></label>
-    <label>השם שלכם (לחתימה)<input class="fbname" value="${esc(name)}"></label>
+    <label>מה תרצה לשאול?<textarea rows="3" class="fbt" placeholder="למשל: לא הבנתי למה בסעיף 6.1 תהליך 45 נכנס לתנאי"></textarea></label>
+    <label>השם שלך (לחתימה)<input class="fbname" value="${esc(name)}"></label>
     ${hasMine?'<label class="cb"><input type="checkbox" class="fbmine" checked> לצרף את התשובה שכתבתי</label>':''}
     <label class="cb"><input type="checkbox" class="fbsol"> לצרף את הפתרון שאני מכיר לשאלה</label>
     <div class="mailprev" dir="rtl"></div>
@@ -580,7 +588,7 @@ function fbText(art,q){
     mine = parts.map((p,i)=>myAns(q.id,i).trim()?(p.label?p.label+'. ':'')+myAns(q.id,i).trim():'').filter(Boolean).join('\n\n'); }
   const L=[];
   L.push('שלום,','',`בהכנה למבחן עברתי על ${qHead(q).replace(/^שאלה/,'שאלה')}, ויש לי שאלה לגביה.`,'');
-  L.push(t||'[כאן תכתבו את השאלה]','');
+  L.push(t||'[כאן תכתוב את השאלה]','');
   L.push('לנוחותך, זה נוסח השאלה:','──────────',qText(q,false),'──────────','');
   if(mine) L.push('התשובה שלי:',mine,'');
   if(sol) L.push('הפתרון שאני מכיר לשאלה:',qText(q,true).slice(qText(q,false).length).trim(),'');
@@ -593,7 +601,7 @@ document.addEventListener('input', e=>{ const box=e.target.closest && e.target.c
   updPrev(box); });
 document.addEventListener('change', e=>{ const box=e.target.closest && e.target.closest('.fb[data-k="ask"]'); if(box) updPrev(box); });
 function copyText(t, msgEl){
-  const done = ok => { msgEl.innerHTML = ok ? 'הועתק ✓' : 'ההעתקה האוטומטית נחסמה. סמנו והעתיקו מכאן:<textarea rows="6" readonly></textarea>'; if(!ok){ const ta=msgEl.querySelector('textarea'); ta.value=t; ta.select(); } };
+  const done = ok => { msgEl.innerHTML = ok ? 'הועתק ✓' : 'ההעתקה האוטומטית נחסמה. סמן והעתק מכאן:<textarea rows="6" readonly></textarea>'; if(!ok){ const ta=msgEl.querySelector('textarea'); ta.value=t; ta.select(); } };
   const legacy = ()=>{ try{ const ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); const ok=document.execCommand('copy'); ta.remove(); done(ok); }catch(e){ done(false); } };
   try{ navigator.clipboard.writeText(t).then(()=>done(true), legacy); }catch(e){ legacy(); }
 }
@@ -614,10 +622,10 @@ function filtersHTML(showOnly){
   const ok = q => !showOnly || onlyOk(q);
   const cnt = t => Q.filter(q=>q.topic===t && S.types.includes(q.type) && ok(q)).length;
   let h = '<div class="panel filters">';
-  h += '<div class="frow"><span class="flabel">נלמד</span>'+TOPICS.filter(t=>t[2]).map(t=>chip('topic',t[0],t[1],cnt(t[0]),S.topics.includes(t[0]),'tc t-'+t[0])).join('')+'</div>';
-  h += '<div class="frow"><span class="flabel">עוד לא</span>'+TOPICS.filter(t=>!t[2]).map(t=>chip('topic',t[0],t[1],cnt(t[0]),S.topics.includes(t[0]),'later tc t-'+t[0])).join('')+'</div>';
-  h += '<div class="frow"><span class="flabel">סוג</span>'+TYPES.map(t=>chip('type',t[0],t[1],Q.filter(q=>q.type===t[0]&&S.topics.includes(q.topic)&&ok(q)).length,S.types.includes(t[0]))).join('')+'<button class="chip" data-act="alltypes">כל הסוגים</button></div>';
-  h += '<div class="frow"><span class="flabel">בחירה</span><button class="chip" data-act="preset" data-p="covered">רק מה שנלמד</button><button class="chip" data-act="preset" data-p="all">כל הנושאים</button><button class="chip" data-act="preset" data-p="none">ביטול סימון הכל</button></div>';
+  h += '<div class="frow"><span class="flabel">נושאים שנלמדו</span>'+TOPICS.filter(t=>t[2]).map(t=>chip('topic',t[0],t[1],cnt(t[0]),S.topics.includes(t[0]),'tc t-'+t[0])).join('')+'</div>';
+  h += '<div class="frow"><span class="flabel">עוד לא נלמדו</span>'+TOPICS.filter(t=>!t[2]).map(t=>chip('topic',t[0],t[1],cnt(t[0]),S.topics.includes(t[0]),'later tc t-'+t[0])).join('')+'</div>';
+  h += '<div class="frow"><span class="flabel">סוג שאלה</span>'+TYPES.map(t=>chip('type',t[0],t[1],Q.filter(q=>q.type===t[0]&&S.topics.includes(q.topic)&&ok(q)).length,S.types.includes(t[0]))).join('')+'<button class="chip" data-act="alltypes">כל הסוגים</button></div>';
+  h += '<div class="frow"><span class="flabel">בחירה מהירה</span><button class="chip" data-act="preset" data-p="covered">רק מה שנלמד</button><button class="chip" data-act="preset" data-p="all">כל הנושאים</button><button class="chip" data-act="preset" data-p="none">ביטול סימון הכל</button></div>';
   if(showOnly) h += '<div class="frow"><span class="flabel">הצג</span>'+ONLY.map(o=>`<button class="chip" data-act="only" data-v="${o[0]}" aria-pressed="${S.only===o[0]}">${o[1]}</button>`).join('')+'</div>';
   return h+'</div>';
 }
@@ -625,7 +633,7 @@ function chip(kind,v,label,n,on,cls){ return `<button class="chip ${cls||''}" da
 function toggle(arr,v){ const i=arr.indexOf(v); if(i<0) arr.push(v); else arr.splice(i,1); }
 HANDLERS.ftopic = b=>{ toggle(S.topics,b.dataset.v); if(S.topics.includes(b.dataset.v) || !S.types.length) S.types=TYPES.map(t=>t[0]); S.pos=0; ORDER=null; save(); render(); };
 HANDLERS.ftype = b=>{ toggle(S.types,b.dataset.v); S.pos=0; ORDER=null; save(); render(); };
-HANDLERS.only = b=>{ S.only=b.dataset.v; if(S.only==='all' || !S.types.length) S.types=TYPES.map(t=>t[0]); S.pos=0; ORDER=null; save(); render(); };
+HANDLERS.only = b=>{ const v=b.dataset.v; if(v==='all'){ S.topics=TOPICS.map(t=>t[0]); S.types=TYPES.map(t=>t[0]); } S.only = (v!=='all' && S.only===v) ? 'all' : v; if(!S.types.length) S.types=TYPES.map(t=>t[0]); S.pos=0; ORDER=null; save(); render(); };
 HANDLERS.alltypes = ()=>{ S.types=TYPES.map(t=>t[0]); S.pos=0; ORDER=null; save(); render(); };
 HANDLERS.preset = b=>{ const v=b.dataset.p; S.topics = v==='all' ? TOPICS.map(t=>t[0]) : v==='none' ? [] : [...COVERED]; if(v!=='none') S.types=TYPES.map(t=>t[0]); S.pos=0; ORDER=null; save(); render(); };
 
@@ -641,16 +649,16 @@ function practice(){
   const per = S.per||ORDER.length||1;
   if(S.pos>=ORDER.length) S.pos=0;
   S.pos = Math.floor(S.pos/per)*per;
-  let h = '<h1>תרגול</h1><p class="lede">שאלות מכל המבחנים, בסדר אקראי. בשאלות סגורות התשובה נבדקת מיד; בשאלות פתוחות חושפים את הפתרון לכל סעיף ומדרגים את עצמכם.</p>';
+  let h = '<h1>תרגול לפי נושא</h1><p class="lede">בלי לחץ זמן, עם פתרון מלא אחרי כל שאלה. בשאלה סגורה התשובה נבדקת מיד; בשאלה פתוחה כתוב את התשובה שלך, חשוף את הפתרון ודרג את עצמך.</p>';
   h += filtersHTML(true);
-  if(S.only!=='all') h += `<div class="notice">מוצגות רק שאלות מהסוג "${ONLY.find(o=>o[0]===S.only)[1]}". <button class="lnk" data-act="only" data-v="all">הצגת כל השאלות</button></div>`;
-  if(!ORDER.length) return h+'<div class="panel empty">אין שאלות שמתאימות לסינון. הוסיפו נושא או סוג שאלה.</div>';
+  if(S.only!=='all') h += `<div class="notice">מוצגות רק שאלות מהסוג "${ONLY.find(o=>o[0]===S.only)[1]}". <button class="lnk" data-act="only" data-v="${S.only}">ביטול הסינון</button></div>`;
+  if(!ORDER.length) return h+'<div class="panel empty"><b>אין שאלות תואמות</b><br>נסה לבחור נושא או סוג שאלה אחר.</div>';
   const end = Math.min(S.pos+per, ORDER.length);
-  const bar = (bottom)=>`<div class="bar"><span class="count">${per===1?S.pos+1:(S.pos+1)+'–'+end} / ${ORDER.length}</span>
-    <button class="btn ghost" data-act="prev" ${S.pos===0?'disabled':''}>${per===1?'הקודמת':'העמוד הקודם'}</button>
-    ${bottom?'':'<button class="btn ghost" data-act="reshuffle">ערבוב</button>'}
-    <button class="btn" data-act="next">${per===1?'הבאה':'העמוד הבא'}</button></div>`;
-  h += `<div class="frow perrow"><span class="flabel">בכל עמוד</span>${[1,5,10,20,0].map(n=>`<button class="chip" data-act="per" data-v="${n}" aria-pressed="${(S.per||0)===n}">${n||'הכל'}</button>`).join('')}</div>`;
+  const bar = (bottom)=>`<div class="bar"><span class="count">${per===1?'שאלה':'שאלות'} <span class="ltr">${per===1?S.pos+1:(S.pos+1)+'–'+end} / ${ORDER.length}</span></span>
+    <button class="btn ghost" data-act="prev" ${S.pos===0?'disabled':''}>${per===1?'→ השאלה הקודמת':'→ העמוד הקודם'}</button>
+    ${bottom?'':'<button class="btn ghost" data-act="reshuffle">⇄ ערבב שאלות</button>'}
+    <button class="btn" data-act="next">${per===1?'השאלה הבאה ←':'העמוד הבא ←'}</button></div>`;
+  h += `<div class="frow perrow"><span class="flabel">שאלות בעמוד</span>${[1,5,10,20,0].map(n=>`<button class="chip" data-act="per" data-v="${n}" aria-pressed="${(S.per||0)===n}">${n||'הכל'}</button>`).join('')}</div>`;
   h += bar(false);
   h += '<div class="list">'+ORDER.slice(S.pos,end).map((id,i)=>card(QID[id],'practice',per===1?0:S.pos+i+1)).join('')+'</div>';
   if(end-S.pos>1) h += bar(true);
@@ -659,7 +667,7 @@ function practice(){
 HANDLERS.per = b=>{ S.per=+b.dataset.v; save(); render(); };
 HANDLERS.next = ()=>{ const per=S.per||ORDER.length; S.pos = S.pos+per>=ORDER.length ? 0 : S.pos+per; save(); render(true); };
 HANDLERS.prev = ()=>{ S.pos = Math.max(0,S.pos-(S.per||ORDER.length)); save(); render(true); };
-HANDLERS.reshuffle = ()=>{ ORDER=null; S.pos=0; save(); render(true); };
+HANDLERS.reshuffle = ()=>{ ORDER=null; S.order=null; S.pos=0; save(); render(true); toast('השאלות עורבבו'); };
 function openQ(id){ if(!QID[id]) return; S.topics = Array.from(new Set(S.topics.concat(QID[id].topic))); if(!S.types.includes(QID[id].type)) S.types.push(QID[id].type); S.only='all'; ORDER=null; save(); const l=filtered().map(q=>q.id); ORDER=[id].concat(shuffle(l.filter(x=>x!==id))); S.pos=0; S.order=ORDER; S.osig=osig(); save(); if(location.hash!=='#practice') history.replaceState(null,'','#practice'); render(true); }
 HANDLERS.goto = b=>openQ(b.dataset.id);
 
@@ -667,13 +675,13 @@ HANDLERS.goto = b=>openQ(b.dataset.id);
 function examView(){
   if(EXAM) return examRun();
   const opts = B.exams.map(e=>`<option value="${esc(e.code)}">${esc(e.code)} · ${esc(e.label)} · ${esc(e.date)} (${e.n} שאלות)</option>`).join('');
-  let h = '<h1>סימולציית מבחן</h1><p class="lede">שאלות סגורות שוות 5 נקודות, ושאלות פתוחות 25 נקודות (מתחלקות שווה בין הסעיפים). התשובות נחשפות רק אחרי ההגשה; את השאלות הפתוחות מדרגים בעצמכם מול הפתרון.</p>';
+  let h = '<h1>סימולציית מבחן</h1><p class="lede">שאלה סגורה שווה 5 נקודות, ושאלה פתוחה 25 נקודות (מתחלקות שווה בין הסעיפים). התשובות נחשפות רק כשמסיימים את המבחן; את השאלות הפתוחות אתה מדרג בעצמך מול הפתרון.</p>';
   h += `<div class="panel" style="display:grid;gap:14px">
-    <div><h2>מבחן מקורי</h2><div class="bar"><select id="exsel" aria-label="בחירת מבחן">${opts}</select><button class="btn" data-act="startreal">התחלה</button></div></div>
-    <div><h2>מבחן אקראי</h2><p class="lede" style="margin:4px 0 0">5 שאלות סגורות ו-3 פתוחות מהנושאים שנבחרו כאן:</p></div>
+    <div><h2>מבחן מקורי</h2><div class="bar"><select id="exsel" aria-label="בחירת מבחן">${opts}</select><button class="btn" data-act="startreal">להתחיל מבחן ←</button></div></div>
+    <div><h2>מבחן אקראי</h2><p class="lede" style="margin:4px 0 0">5 שאלות סגורות ו-3 פתוחות, מהנושאים שתבחר כאן:</p></div>
     ${filtersHTML(false)}
     <div class="bar"><label for="extime">זמן:</label><select id="extime"><option value="0">בלי טיימר</option><option value="120">שעתיים</option><option value="180" selected>3 שעות</option></select>
-      <button class="btn" data-act="startrand">מבחן אקראי חדש</button></div></div>`;
+      <button class="btn" data-act="startrand">להתחיל מבחן אקראי ←</button></div></div>`;
   return h;
 }
 HANDLERS.startreal = ()=>{ const c=document.getElementById('exsel').value; startExam(Q.filter(q=>q.exam===c), 'מבחן '+c+' · '+B.exams.find(e=>e.code===c).label); };
@@ -692,17 +700,22 @@ function maxPts(q){ return q.type==='open'?25:5; }
 function examRun(){
   let h = `<div class="exhead"><h1>${esc(EXAM.title)}</h1><span class="timer" id="timer"></span></div>`;
   h += '<div class="list" id="examlist">'+EXAM.qs.map((id,i)=>card(QID[id],'exam',i+1)).join('')+'</div>';
-  h += `<div class="bar" id="exfoot">${EXAM.submitted?'':'<button class="btn" data-act="submit">הגשה</button>'}<button class="btn ghost" data-act="quit">יציאה מהמבחן</button><span id="exscore"></span></div>`;
+  h += `<div class="bar" id="exfoot">${EXAM.submitted?'':'<button class="btn" data-act="submit">סיים מבחן</button>'}<button class="btn ghost" data-act="quit">יציאה מהמבחן</button><span id="exscore"></span></div>`;
   return h;
 }
-HANDLERS.submit = ()=>submitExam();
+HANDLERS.submit = ()=>{
+  const un=[...document.querySelectorAll('#examlist .qcard')].filter(a=>{ const q=QID[a.dataset.id]; return q.type==='open' ? ![...a.querySelectorAll('.myans textarea')].some(t=>t.value.trim()) : !a.querySelector('.opt.sel'); }).length;
+  if(un) confirmBox('לסיים את המבחן?', `יש ${un} שאלות לא ענויות. להמשיך עם הסיום?`, 'סיים מבחן', 'חזרה למבחן', submitExam); else submitExam(); };
 function examActive(){ return EXAM && !EXAM.submitted; }
-function askLeave(go){
+function confirmBox(title, text, yes, no, onYes){
   const m=document.createElement('div'); m.className='modal';
-  m.innerHTML='<div role="dialog" aria-modal="true"><b>לצאת מהמבחן?</b><p>המבחן יסתיים, והתשובות שסימנתם לא יישמרו.</p><div class="bar"><button class="btn" data-x="1">יציאה מהמבחן</button><button class="btn ghost" data-x="0">חזרה למבחן</button></div></div>';
-  m.addEventListener('click',e=>{ const x=e.target.dataset.x; if(x===undefined && e.target!==m) return; m.remove(); if(x==='1'){ EXAM=null; clearInterval(window.__t); go(); } });
+  m.innerHTML=`<div role="dialog" aria-modal="true"><b>${title}</b><p>${text}</p><div class="bar"><button class="btn" data-x="1">${yes}</button><button class="btn ghost" data-x="0">${no}</button></div></div>`;
+  m.addEventListener('click',e=>{ const x=e.target.dataset.x; if(x===undefined && e.target!==m) return; m.remove(); if(x==='1') onYes(); });
   document.body.appendChild(m); m.querySelector('[data-x="0"]').focus();
 }
+function askLeave(go){ confirmBox('האם לצאת מהמבחן?','המבחן יסתיים, והתשובות לא יישמרו.','יציאה מהמבחן','חזרה למבחן',()=>{ EXAM=null; clearInterval(window.__t); go(); }); }
+function toast(t){ let el=document.getElementById('toast'); if(!el){ el=document.createElement('div'); el.id='toast'; el.setAttribute('role','status'); document.body.appendChild(el); }
+  el.textContent=t; el.className='show'; clearTimeout(window.__tt); window.__tt=setTimeout(()=>el.className='',1800); }
 HANDLERS.quit = ()=>{ if(examActive()) askLeave(()=>render(true)); else { EXAM=null; render(true); } };
 function submitExam(){
   if(!EXAM || EXAM.submitted) return; EXAM.submitted = true;
@@ -725,7 +738,9 @@ function updateExamScore(){
     if(q.type==='open'){ const s=openScore(art); if(s===null) pending++; else got+=25*s; } else got+= art.dataset.ok==='1'?5:0;
   });
   const pct = Math.round(100*got/max);
-  document.getElementById('exscore').innerHTML = `<span class="score">${pct}</span> / 100 ` + (pending?`<span class="pnum">(חסר דירוג עצמי ב-${pending} שאלות פתוחות – לחצו "הצג פתרון" בכל סעיף)</span>`:'');
+  const msg = pct>=90?'מצוין! אתה מוכן למבחן.':pct>=75?'יפה מאוד. חזור על השאלות שטעית בהן.':pct>=60?'עברת! אך יש מקום לשיפור.':'יש לעבוד יותר. נסה תרגול לפי נושא.';
+  if(!pending && !EXAM.saved){ EXAM.saved=true; (S.exhist=S.exhist||[]).push({s:pct,t:Date.now()}); save(); }
+  document.getElementById('exscore').innerHTML = `ציון: <span class="score">${pct}</span> / 100 ` + (pending?'':`<span class="emsg">${msg}</span> `) + (pending?`<span class="pnum">(חסר דירוג עצמי ב-${pending} שאלות פתוחות – לחץ "הצג פתרון" בכל סעיף ודרג את עצמך)</span>`:'');
 }
 function tick(){
   clearInterval(window.__t);
@@ -742,7 +757,7 @@ function tick(){
 /* ---------- browse ---------- */
 let QUERY='';
 function browse(){
-  let h = '<h1>כל המאגר</h1><p class="lede">כל השאלות לפי מבחן, עם הפתרון המלא. הסינון לפי נושא וסוג חל גם כאן.</p>'+filtersHTML(false);
+  let h = '<h1>כל השאלות במאגר</h1><p class="lede">כל השאלות לפי מבחן, עם הפתרון המלא. שימושי לחזרה לפני המבחן. הסינון לפי נושא וסוג חל גם כאן.</p>'+filtersHTML(false);
   h += `<div class="bar"><input type="search" id="bq" placeholder="חיפוש בשאלות (למשל fork, RAID, TLB)" value="${esc(QUERY)}" style="flex:1;min-width:0"></div><div id="blist"></div>`;
   return h;
 }
@@ -751,7 +766,7 @@ function fillBrowse(){
   const list = Q.filter(q=> S.topics.includes(q.topic) && S.types.includes(q.type) && (!ql || JSON.stringify(q).toLowerCase().includes(ql)));
   const by = {}; list.forEach(q=>(by[q.exam]=by[q.exam]||[]).push(q));
   const el=document.getElementById('blist');
-  if(!list.length){ el.innerHTML='<div class="panel empty">לא נמצאו שאלות.</div>'; return; }
+  if(!list.length){ el.innerHTML='<div class="panel empty"><b>אין שאלות תואמות</b><br>נסה חיפוש אחר, או בחר נושאים נוספים.</div>'; return; }
   el.innerHTML = B.exams.filter(e=>by[e.code]).map(e=>`<details class="exgroup" ${ql?'open':''}><summary>${esc(e.code)} · ${esc(e.label)} · ${esc(e.date)} <span class="pnum">${by[e.code].length}</span></summary><div class="list" data-ex="${esc(e.code)}"></div></details>`).join('');
   el.querySelectorAll('details').forEach(d=>{
     const fill=()=>{ const box=d.querySelector('.list'); if(box.dataset.f) return; box.dataset.f=1; box.innerHTML = by[box.dataset.ex].map(q=>card(q,'review')).join(''); box.querySelectorAll('.qcard').forEach(art=>revealAll(art)); };
@@ -766,7 +781,7 @@ function revealAll(art){
 
 /* ---------- progress ---------- */
 function progress(){
-  let h = '<h1>התקדמות</h1><p class="lede">התוצאה האחרונה בכל שאלה שניסיתם, לפי נושא. שאלה פתוחה נחשבת לפי הדירוג העצמי שלה. הנתונים נשמרים רק בדפדפן הזה.</p><div class="panel prog">';
+  let h = '<h1>התקדמות</h1><p class="lede">התוצאה האחרונה בכל שאלה שניסית, לפי נושא. שאלה פתוחה נחשבת לפי הדירוג העצמי שלה. הנתונים נשמרים רק בדפדפן הזה.</p><div class="panel prog">';
   for(const [t,name] of TOPICS){
     const qs=Q.filter(q=>q.topic===t), tried=qs.filter(q=>S.results[q.id]);
     const good=tried.reduce((a,q)=>a+S.results[q.id].s,0);
@@ -778,7 +793,7 @@ function progress(){
   h+='<h2 style="margin-top:22px">טעויות אחרונות</h2>';
   h+= wrong.length ? '<div class="panel mini" style="margin-top:8px">'+wrong.slice(0,40).map(q=>`<button class="chip" data-act="goto" data-id="${esc(q.id)}" title="${esc(TNAME[q.topic])}">${esc(q.id)}</button>`).join('')+'</div>' : '<p class="lede">אין עדיין טעויות רשומות.</p>';
   const mk=S.marked.filter(id=>QID[id]);
-  h+='<h2 style="margin-top:22px">מסומנות ★</h2>'+(mk.length?'<div class="panel mini" style="margin-top:8px">'+mk.map(id=>`<button class="chip" data-act="goto" data-id="${esc(id)}">${esc(id)}</button>`).join('')+'</div>':'<p class="lede">עוד לא סימנתם שאלות.</p>');
+  h+='<h2 style="margin-top:22px">שאלות שסימנת ★</h2>'+(mk.length?'<div class="panel mini" style="margin-top:8px">'+mk.map(id=>`<button class="chip" data-act="goto" data-id="${esc(id)}">${esc(id)}</button>`).join('')+'</div>':'<p class="lede">עוד לא סימנתם שאלות.</p>');
   h+='<div class="bar" id="resetbar" style="margin-top:22px"><button class="btn ghost" data-act="reset">איפוס ההתקדמות</button></div>';
   return h;
 }
@@ -792,17 +807,17 @@ function home(){
   const nRep=Q.filter(q=>q.rep).length;
   let h='<div class="home"><header class="hero"><div class="hero-meta"><span>המכללה האקדמית תל אביב-יפו · בית הספר למדעי המחשב</span></div>';
   h+='<h1>מערכות הפעלה</h1><p>תרגול אינטראקטיבי למבחן · מבוסס על מבחנים אמיתיים משנים <span class="ltr">'+Math.min(...years)+'</span>–<span class="ltr">'+Math.max(...years)+'</span>, עם פתרון מלא ומנומק לכל שאלה</p>';
-  h+='<div class="hstats">'+[[Q.length,'שאלות'],[B.exams.length,'מבחנים'],[nOpen,'שאלות פתוחות'],[nRep,'חזרו במבחנים']].map(x=>`<div class="hstat"><b>${x[0]}</b><span>${x[1]}</span></div>`).join('')+'</div></header>';
+  h+='<div class="hstats">'+[[Q.length,'שאלות במאגר'],[B.exams.length,'מבחנים'],[(S.exhist||[]).length?Math.max(...S.exhist.map(x=>x.s)):'–','הציון הגבוה'],[(S.exhist||[]).length?Math.round(S.exhist.reduce((a,x)=>a+x.s,0)/S.exhist.length):'–','ציון ממוצע'],[S.marked.length,'שאלות מסומנות']].map(x=>`<div class="hstat"><b>${x[0]}</b><span>${x[1]}</span></div>`).join('')+'</div></header>';
   // weak topics
   const per={}; Object.entries(S.results).forEach(([id,r])=>{ const q=QID[id]; if(!q) return; const t=per[q.topic]=per[q.topic]||{n:0,s:0}; t.n++; t.s+=r.s; });
-  const weak=Object.entries(per).filter(([t,v])=>v.n>=3 && v.s/v.n<0.75).sort((a,b)=>a[1].s/a[1].n-b[1].s/b[1].n).slice(0,4);
-  if(weak.length) h+=`<section class="weak"><h2>◐ כדאי לחזור על</h2><div style="font-size:.85rem;color:var(--ink-2)">הנושאים שבהם ההצלחה שלכם הכי נמוכה עד עכשיו</div><div class="wl">${weak.map(([t,v])=>`<button class="wi tbadge t-${t}" data-act="topicgo" data-v="${t}"><b>${esc(TNAME[t])}</b><small>${Math.round(100*v.s/v.n)}% הצלחה · ${v.n} שאלות</small><div class="bar2"><i style="width:${Math.round(100*v.s/v.n)}%"></i></div></button>`).join('')}</div></section>`;
+  const weak=Object.entries(per).filter(([t,v])=>v.n>=3 && v.s/v.n<0.7).sort((a,b)=>a[1].s/a[1].n-b[1].s/b[1].n).slice(0,4);
+  if(weak.length) h+=`<section class="weak"><h2>◐ נושאים שכדאי לחזק</h2><div style="font-size:.85rem;color:var(--ink-2)">לפי הביצועים שלך עד עכשיו — דיוק מתחת ל-<span class="ltr">70%</span></div><div class="wl">${weak.map(([t,v])=>`<button class="wi tbadge t-${t}" data-act="topicgo" data-v="${t}"><b>${esc(TNAME[t])}</b><small><span class="ltr">${Math.round(100*v.s/v.n)}%</span> דיוק · ${v.n} שאלות</small><div class="bar2"><i style="width:${Math.round(100*v.s/v.n)}%"></i></div></button>`).join('')}</div></section>`;
   const modes=[
-    ['practice','t-process','◉','תרגול לפי נושא','שאלה אחר שאלה או כמה בעמוד, לפי נושא וסוג. בלי לחץ זמן, עם פתרון מלא אחרי כל שאלה.','לבחור נושא ←','#practice'],
+    ['practice','t-process','◉','תרגול לפי נושא','סינון לפי נושא וסוג שאלה. בלי לחץ זמן, עם פתרון מלא ומנומק אחרי כל שאלה.','לבחור נושא ←','#practice'],
     ['exam','t-threads','⏱','סימולציית מבחן','מבחן מקורי מלא או מבחן אקראי (5 סגורות ו-3 פתוחות), עם טיימר וציון בסוף.','להתחיל מבחן ←','#exam'],
-    ['browse','t-redir','≡','גלישה במאגר','כל השאלות לפי מבחן, עם הפתרונות המלאים וחיפוש חופשי. שימושי לחזרה לפני המבחן.','לסקור שאלות ←','#browse'],
-    ['wrong','t-sched','★','טעויות ומסומנות','שאלות שטעיתם בהן ושאלות שסימנתם לחזרה – תרגול ממוקד במה שעוד לא יושב.','לתרגל טעויות ←',null],
-    ['progress','t-sync','▤','התקדמות','כמה פתרתם בכל נושא, ומה אחוז ההצלחה שלכם.','לראות התקדמות ←','#progress'],
+    ['browse','t-redir','≡','גלישה במאגר','צפייה בכל השאלות במאגר, מסודרות לפי מבחן, עם הפתרונות וחיפוש. שימושי לחזרה לפני המבחן.','לסקור שאלות ←','#browse'],
+    ['wrong','t-sched','★','טעויות ומסומנות','שאלות שטעית בהן ושאלות שסימנת לחזרה – תרגול ממוקד במה שעוד לא יושב.','לראות מסומנות ←',null],
+    ['progress','t-sync','▤','התקדמות','כמה פתרת בכל נושא, מה אחוז ההצלחה שלך, והטעויות האחרונות.','לראות התקדמות ←','#progress'],
     ['study','t-memory','📖','אתר הסיכום','סיכום מלא של ההרצאות והתרגולים, עם הדגמות אינטראקטיביות – להעמקה לפני התרגול.','לאתר הסיכום ↗',STUDY]];
   h+='<section><h2 class="stitle">בחרו מצב תרגול</h2><div class="modes">'+modes.map(m=>{
     const inner=`<div class="ic">${m[2]}</div><h3>${m[3]}</h3><p>${m[4]}</p><span class="cta">${m[5]}</span>`;
@@ -813,7 +828,7 @@ function home(){
   h+='<section><h2 class="stitle">מבנה המבחן</h2><div class="igrid">'+[['שאלות סגורות','5 שאלות'],['ניקוד לסגורה','5 נקודות'],['שאלות פתוחות','3 שאלות'],['ניקוד לפתוחה','25 נקודות'],['סוגי שאלות','אמריקאיות, נכון/לא נכון, פתוחות']].map(x=>`<div class="icard"><small>${x[0]}</small><b>${x[1]}</b></div>`).join('')+
     '</div><p style="font-size:.82rem;color:var(--muted);margin:8px 0 0">זה המבנה ב-18 מתוך 31 המבחנים במאגר. בחלק מהמבחנים יש 4–5 שאלות פתוחות, ובמבחנים הישנים אין שאלות סגורות.</p></section>';
   const done=Object.keys(S.results).filter(id=>QID[id]).length;
-  h+=`<footer class="hfoot">האתר נבנה על בסיס ${B.exams.length} מבחנים אמיתיים של הקורס. כל פתרון נבדק – רבים מהם בהרצת קוד או בחישוב.<br>${done?`פתרתם עד עכשיו ${done} שאלות.`:'כל ההתקדמות נשמרת במכשיר שלכם בלבד.'}</footer></div>`;
+  h+=`<footer class="hfoot">האתר נבנה על בסיס ${B.exams.length} מבחנים אמיתיים של הקורס. כל פתרון נבדק – רבים מהם בהרצת קוד או בחישוב.<br>${done?`פתרת עד עכשיו ${done} שאלות. `:''}ההתקדמות נשמרת במכשיר שלך בלבד.</footer></div>`;
   return h;
 }
 HANDLERS.topicgo = b=>{ S.topics=[b.dataset.v]; S.types=TYPES.map(t=>t[0]); S.only='all'; S.pos=0; ORDER=null; save(); location.hash='practice'; };
@@ -830,7 +845,7 @@ function render(top){
   if(!VIEWS[v]) v='practice';
   CURVIEW = v;
   document.querySelectorAll('nav.tabs a').forEach(a=>a.setAttribute('aria-current', a.dataset.view===v?'page':'false'));
-  const app=document.getElementById('app'); app.innerHTML = VIEWS[v]();
+  const app=document.getElementById('app'); app.innerHTML = (v==='home' || (v==='exam' && EXAM) ? '' : '<a class="back" href="#home">→ חזרה לדף הבית</a>') + VIEWS[v]();
   if(v==='browse'){ fillBrowse(); const s=document.getElementById('bq'); s.addEventListener('input',()=>{ QUERY=s.value; clearTimeout(window.__bt); window.__bt=setTimeout(fillBrowse,200); }); }
   if(v==='exam' && EXAM){ updateExamScore(); }
   app.querySelectorAll('.myans textarea').forEach(t=>{ if(t.value) grow(t); });

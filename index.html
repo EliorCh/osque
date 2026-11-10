@@ -9,26 +9,30 @@
 <title>תרגול מבחנים במערכות הפעלה</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&family=Rubik:wght@500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
 /* Layout: sticky toolbar + single reading column (max ~860px); one question card at a time in practice, stacked list in exam/browse */
 :root{
-  --bg:#F3F5F6; --surface:#FFFFFF; --sunk:#E8EDEF; --ink:#1C2A30; --ink-2:#4A5A61; --muted:#7A8A90; --line:#D3DCDF;
-  --accent:#1F6F78; --accent-ink:#FFFFFF; --accent-soft:#D9ECEE;
-  --good:#2E7D4F; --good-soft:#DDF1E4; --bad:#B23B3B; --bad-soft:#F8E0DE; --warn:#9A6A00; --warn-soft:#FBEFCF;
-  --code-bg:#17252B; --code-ink:#E3EEF1;
-  --f-body:'Heebo',system-ui,sans-serif; --f-head:'Rubik','Heebo',system-ui,sans-serif; --f-mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+  --bg:#FBF8F3; --surface:#FFFFFF; --sunk:#F5F0E8; --ink:#2C2A26; --ink-2:#5C5852; --muted:#8B867E; --line:#E8E0D0;
+  --accent:#6E5BA8; --accent-ink:#FFFFFF; --accent-soft:#EDE6F5;
+  --good:#2F6B57; --good-soft:#E3F1EB; --bad:#A33A4B; --bad-soft:#FAE9EC; --warn:#7A5A10; --warn-soft:#FBF3D9;
+  --code-bg:#2C2A33; --code-ink:#EEEAF5;
+  --shadow:0 1px 3px rgba(60,55,50,.06),0 4px 12px rgba(60,55,50,.04); --shadow-lg:0 4px 8px rgba(60,55,50,.08),0 12px 32px rgba(60,55,50,.06);
+  --f-body:'Heebo',system-ui,sans-serif; --f-head:'Heebo',system-ui,sans-serif; --f-mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#11191C; --surface:#18242A; --sunk:#0E1518; --ink:#E4ECEE; --ink-2:#B3C1C6; --muted:#81939A; --line:#2B3A40;
-  --accent:#4FB3BD; --accent-ink:#0B1416; --accent-soft:#1D3A3E;
-  --good:#6CCB92; --good-soft:#173627; --bad:#EE8A84; --bad-soft:#3E1D1C; --warn:#E3B54F; --warn-soft:#3A2F12;
-  --code-bg:#0A1114; --code-ink:#DCE8EB; color-scheme:dark}}
+  --bg:#1B1916; --surface:#24211D; --sunk:#171512; --ink:#EDE7DD; --ink-2:#C6BEB1; --muted:#968D80; --line:#3A352E;
+  --accent:#B8A9D9; --accent-ink:#1B1916; --accent-soft:#352E47;
+  --good:#95C9B8; --good-soft:#1F3A31; --bad:#E8B4BC; --bad-soft:#4A2A30; --warn:#E8D49A; --warn-soft:#3D3420;
+  --code-bg:#121110; --code-ink:#E6E0EE; --shadow:none; --shadow-lg:0 6px 20px rgba(0,0,0,.35); color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#11191C; --surface:#18242A; --sunk:#0E1518; --ink:#E4ECEE; --ink-2:#B3C1C6; --muted:#81939A; --line:#2B3A40;
-  --accent:#4FB3BD; --accent-ink:#0B1416; --accent-soft:#1D3A3E;
-  --good:#6CCB92; --good-soft:#173627; --bad:#EE8A84; --bad-soft:#3E1D1C; --warn:#E3B54F; --warn-soft:#3A2F12;
-  --code-bg:#0A1114; --code-ink:#DCE8EB; color-scheme:dark}
+  --bg:#1B1916; --surface:#24211D; --sunk:#171512; --ink:#EDE7DD; --ink-2:#C6BEB1; --muted:#968D80; --line:#3A352E;
+  --accent:#B8A9D9; --accent-ink:#1B1916; --accent-soft:#352E47;
+  --good:#95C9B8; --good-soft:#1F3A31; --bad:#E8B4BC; --bad-soft:#4A2A30; --warn:#E8D49A; --warn-soft:#3D3420;
+  --code-bg:#121110; --code-ink:#E6E0EE; --shadow:none; --shadow-lg:0 6px 20px rgba(0,0,0,.35); color-scheme:dark}
+/* topic colours (pastel, from the course-practice family of sites) */
+.t-intro{--tc:#94B8D6} .t-process{--tc:#B8A9D9} .t-sched{--tc:#F0B894} .t-signals{--tc:#D89BA6} .t-redir{--tc:#95C9B8} .t-memory{--tc:#7BA89A}
+.t-threads{--tc:#E8B4BC} .t-sync{--tc:#E8D49A} .t-deadlock{--tc:#C9B49E} .t-disk{--tc:#A9C3A0} .t-fs{--tc:#A8B8C8}
 *{box-sizing:border-box}
 html{direction:rtl}
 body{direction:rtl;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.65;margin:0}
@@ -45,10 +49,10 @@ nav.tabs a[aria-current="page"]{background:var(--accent);color:var(--accent-ink)
 nav.tabs a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 main{padding-block:20px 60px}
 h1,h2,h3{font-family:var(--f-head);text-wrap:balance;line-height:1.3}
-h1{font-size:1.5rem;margin:0 0 6px}
+h1{font-size:1.7rem;font-weight:800;letter-spacing:-.01em;margin:0 0 6px}
 h2{font-size:1.15rem;margin:0}
 .lede{color:var(--ink-2);margin:0 0 16px;max-width:65ch}
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:14px 16px}
 .filters{display:grid;gap:10px;margin-bottom:16px}
 .frow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .flabel{font-size:.78rem;letter-spacing:.04em;color:var(--muted);min-width:64px;font-weight:500}
@@ -56,13 +60,13 @@ h2{font-size:1.15rem;margin:0}
 .chip .n{font-family:var(--f-mono);font-size:.75rem;color:var(--muted)}
 .chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
 .chip.later{border-style:dashed}
-.btn{border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);border-radius:8px;padding:7px 14px;font:inherit;font-weight:500;cursor:pointer}
+.btn{border:1.5px solid var(--accent);background:var(--accent);color:var(--accent-ink);border-radius:8px;padding:8px 18px;font:inherit;font-weight:600;cursor:pointer}
 .btn.ghost{background:transparent;color:var(--accent)}
 .btn:disabled{opacity:.45;cursor:default}
 .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}
 .count{font-family:var(--f-mono);font-size:.85rem;color:var(--muted);margin-inline-end:auto}
 .qcard>*,.part>*,.sol>*,.slot>*{min-width:0}
-.qcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:grid;gap:12px;min-width:0}
+.qcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:18px 20px;display:grid;gap:12px;min-width:0}
 .qhead{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:.82rem}
 .rep{font-size:.88rem;color:var(--ink-2);display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline}
 .rep .rk{border-radius:6px;padding:1px 8px;background:var(--warn-soft);color:var(--ink);font-weight:600}
@@ -89,17 +93,46 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center}
 .myans{display:grid;gap:4px;font-size:.85rem;color:var(--muted)}
 .myans textarea{font:inherit;font-size:.95rem;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;box-sizing:border-box;resize:vertical;min-height:4.5em;line-height:1.5}
 .myans textarea:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
-.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:12px;margin-bottom:14px}
-.tile{display:grid;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;text-decoration:none;color:var(--ink)}
-.tile b{font-family:var(--f-head);font-size:1.1rem;color:var(--accent)}
-.tile span{color:var(--ink-2);font-size:.92rem}
-.tile:hover{border-color:var(--accent)}
-.homestat{display:flex;flex-wrap:wrap;gap:8px 16px;justify-content:space-between}
-.homestat a{color:var(--accent)}
+.hero{text-align:center;padding:26px 0 30px;border-bottom:1px solid var(--line);margin-bottom:30px}
+.hero-meta{display:inline-flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:10px;font-size:.8rem;font-weight:500;color:var(--muted);margin-bottom:16px}
+.hero-meta .code{background:var(--accent-soft);color:var(--accent);padding:3px 12px;border-radius:999px;font-family:var(--f-mono)}
+.hero h1{font-size:clamp(2.1rem,6vw,3.3rem);line-height:1.05;letter-spacing:-.02em;margin:0 0 14px}
+.hero p{color:var(--ink-2);max-width:620px;margin:0 auto;font-size:1.05rem}
+.hstats{display:flex;justify-content:center;gap:14px 38px;flex-wrap:wrap;margin-top:26px}
+.hstat b{display:block;font-family:var(--f-mono);font-size:1.9rem;line-height:1;color:var(--accent);margin-bottom:6px}
+.hstat span{font-size:.78rem;color:var(--muted)}
+.stitle{font-size:1.35rem;font-weight:700;margin:0 0 16px}
+.home section{margin-bottom:38px}
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:16px}
+.mode{position:relative;overflow:hidden;display:block;text-align:start;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px 22px 18px;box-shadow:var(--shadow);color:var(--ink);text-decoration:none;font:inherit;cursor:pointer;transition:transform .18s,box-shadow .18s,border-color .18s}
+.mode::before{content:"";position:absolute;top:0;inset-inline-start:0;width:80px;height:80px;border-end-end-radius:100%;background:var(--tc);opacity:.25}
+.mode:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);border-color:var(--tc)}
+.mode .ic{position:relative;font-size:1.5rem;line-height:1;margin-bottom:12px;color:color-mix(in srgb,var(--tc) 45%,var(--ink))}
+.mode h3{position:relative;font-size:1.2rem;margin:0 0 6px}
+.mode p{position:relative;font-size:.9rem;color:var(--ink-2);margin:0 0 12px}
+.mode .cta{position:relative;font-weight:600;font-size:.9rem;color:color-mix(in srgb,var(--tc) 45%,var(--ink))}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:10px}
+.tbadge{display:grid;gap:2px;border-radius:8px;padding:12px 16px;background:color-mix(in srgb,var(--tc) 18%,var(--surface));border-inline-start:4px solid var(--tc);text-align:start;font:inherit;color:var(--ink);cursor:pointer;border-top:0;border-bottom:0;border-inline-end:0}
+.tbadge b{font-size:.95rem;color:color-mix(in srgb,var(--tc) 35%,var(--ink))}
+.tbadge span{font-size:.8rem;color:var(--ink-2)}
+.tbadge.later{opacity:.7}
+.weak{background:linear-gradient(135deg,color-mix(in srgb,#F0B894 22%,var(--surface)),color-mix(in srgb,#D89BA6 22%,var(--surface)));border:1px solid var(--line);border-radius:14px;padding:18px 22px}
+.weak h2{margin:0 0 4px;font-size:1.1rem}
+.weak .wl{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:12px}
+.weak .wi{background:var(--surface);border-radius:8px;padding:10px 14px;display:grid;gap:3px;font-size:.9rem}
+.weak .wi small{font-family:var(--f-mono);color:var(--ink-2)}
+.weak .bar2{height:5px;background:var(--sunk);border-radius:3px;overflow:hidden}.weak .bar2 i{display:block;height:100%;background:#D89BA6}
+.igrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:10px}
+.icard{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px;text-align:center}
+.icard small{display:block;font-size:.72rem;color:var(--muted);margin-bottom:2px}
+.icard b{font-size:.95rem}
+.hfoot{text-align:center;color:var(--muted);font-size:.85rem;border-top:1px solid var(--line);padding-top:22px}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:grid;place-items:center;z-index:50;padding:16px}
 .modal>div{background:var(--surface);border-radius:12px;padding:18px 20px;max-width:380px;display:grid;gap:12px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
 .modal p{margin:0}
 .tag{border-radius:6px;padding:1px 8px;background:var(--sunk);color:var(--ink-2)}
+.tag.topic{background:color-mix(in srgb,var(--tc) 28%,var(--surface));color:color-mix(in srgb,var(--tc) 30%,var(--ink));font-weight:600}
+.chip.tc[aria-pressed="true"]{background:color-mix(in srgb,var(--tc) 30%,var(--surface));border-color:var(--tc)}
 .tag.exam{font-family:var(--f-mono);background:var(--ink);color:var(--surface);font-weight:600}
 .tag.type{background:var(--accent-soft);color:var(--ink)}
 .star{margin-inline-start:auto;border:none;background:none;font-size:1.25rem;cursor:pointer;color:var(--muted);line-height:1}
@@ -340,10 +373,10 @@ function esc(s){ return escapeHtml(String(s)).replace(/"/g,'&quot;'); }
 
 /* ---------- filtering ---------- */
 function onlyOk(q){
-  return S.only==='all' || (S.only==='wrong' && S.results[q.id] && S.results[q.id].s<1) || (S.only==='new' && !S.results[q.id]) || (S.only==='marked' && S.marked.includes(q.id)) || (S.only==='rep' && !!q.rep);
+  return S.only==='all' || (S.only==='wrong' && S.results[q.id] && S.results[q.id].s<1) || (S.only==='new' && !S.results[q.id]) || (S.only==='marked' && S.marked.includes(q.id)) || (S.only==='rep' && !!q.rep) || (S.only==='review' && ((S.results[q.id] && S.results[q.id].s<1) || S.marked.includes(q.id)));
 }
 function filtered(){ return Q.filter(q=> S.topics.includes(q.topic) && S.types.includes(q.type) && onlyOk(q)); }
-const ONLY = [['all','הכל'],['new','שלא ניסיתי'],['wrong','טעויות'],['marked','מסומנות ★'],['rep','חזרו במבחנים']];
+const ONLY = [['all','הכל'],['new','שלא ניסיתי'],['wrong','טעויות'],['marked','מסומנות ★'],['rep','חזרו במבחנים'],['review','טעויות ומסומנות']];
 function shuffle(a,seed){ a=a.slice(); let r=seed||Math.random; for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
 function rng(seed){ let x=seed>>>0||1; return ()=>{ x^=x<<13; x^=x>>>17; x^=x<<5; return ((x>>>0)%100000)/100000; }; }
 
@@ -363,7 +396,7 @@ function card(q, mode, n){
   const marked = S.marked.includes(q.id);
   let h = `<article class="qcard" data-id="${esc(q.id)}">
    <div class="qhead">${n?`<span class="tag">שאלה ${n}</span>`:''}<span class="tag exam" title="${esc(q.examLabel)}, ${esc(q.date)}">${esc(q.exam)} · שאלה ${esc(q.num)}</span>
-   <span class="tag">${esc(TNAME[q.topic])}${q.sub?' · '+renderText(q.sub):''}</span><span class="tag type">${TYPENAME[q.type]}</span>
+   <span class="tag topic t-${q.topic}">${esc(TNAME[q.topic])}${q.sub?' · '+renderText(q.sub):''}</span><span class="tag type">${TYPENAME[q.type]}</span>
    ${mode==='exam'?'':'<button class="fbb" data-act="fbopen" data-k="report" title="דיווח על טעות או בעיה בשאלה">⚑ דיווח</button><button class="fbb" data-act="fbopen" data-k="ask" title="הכנת הודעה למרצה עם כל נתוני השאלה">✉ שאלה למרצה</button>'}
    <button class="star" data-act="mark" aria-pressed="${marked}" aria-label="סימון השאלה" title="סימון לחזרה">★</button></div><div class="fbslot"></div>`;
   if(q.rep) h += repLine(q, mode);
@@ -581,8 +614,8 @@ function filtersHTML(showOnly){
   const ok = q => !showOnly || onlyOk(q);
   const cnt = t => Q.filter(q=>q.topic===t && S.types.includes(q.type) && ok(q)).length;
   let h = '<div class="panel filters">';
-  h += '<div class="frow"><span class="flabel">נלמד</span>'+TOPICS.filter(t=>t[2]).map(t=>chip('topic',t[0],t[1],cnt(t[0]),S.topics.includes(t[0]))).join('')+'</div>';
-  h += '<div class="frow"><span class="flabel">עוד לא</span>'+TOPICS.filter(t=>!t[2]).map(t=>chip('topic',t[0],t[1],cnt(t[0]),S.topics.includes(t[0]),'later')).join('')+'</div>';
+  h += '<div class="frow"><span class="flabel">נלמד</span>'+TOPICS.filter(t=>t[2]).map(t=>chip('topic',t[0],t[1],cnt(t[0]),S.topics.includes(t[0]),'tc t-'+t[0])).join('')+'</div>';
+  h += '<div class="frow"><span class="flabel">עוד לא</span>'+TOPICS.filter(t=>!t[2]).map(t=>chip('topic',t[0],t[1],cnt(t[0]),S.topics.includes(t[0]),'later tc t-'+t[0])).join('')+'</div>';
   h += '<div class="frow"><span class="flabel">סוג</span>'+TYPES.map(t=>chip('type',t[0],t[1],Q.filter(q=>q.type===t[0]&&S.topics.includes(q.topic)&&ok(q)).length,S.types.includes(t[0]))).join('')+'<button class="chip" data-act="alltypes">כל הסוגים</button></div>';
   h += '<div class="frow"><span class="flabel">בחירה</span><button class="chip" data-act="preset" data-p="covered">רק מה שנלמד</button><button class="chip" data-act="preset" data-p="all">כל הנושאים</button><button class="chip" data-act="preset" data-p="none">ביטול סימון הכל</button></div>';
   if(showOnly) h += '<div class="frow"><span class="flabel">הצג</span>'+ONLY.map(o=>`<button class="chip" data-act="only" data-v="${o[0]}" aria-pressed="${S.only===o[0]}">${o[1]}</button>`).join('')+'</div>';
@@ -755,16 +788,36 @@ HANDLERS.resetno = ()=>render();
 
 /* ---------- router ---------- */
 function home(){
-  const done=Object.keys(S.results).filter(id=>QID[id]).length, ok=Object.keys(S.results).filter(id=>QID[id]&&S.results[id].s>=1).length;
-  const tiles=[['practice','תרגול','שאלות מכל המבחנים בסדר אקראי, לפי נושא וסוג. כמה שאלות בעמוד – לבחירתכם.'],
-    ['exam','סימולציית מבחן','מבחן מקורי מלא או מבחן אקראי, עם טיימר וציון בסוף.'],
-    ['browse','כל המאגר','כל השאלות לפי מבחן, עם הפתרונות המלאים וחיפוש.'],
-    ['progress','התקדמות','מה כבר פתרתם, איפה טעיתם ובאיזה נושא כדאי להתמקד.']];
-  let h='<h1>תרגול מבחנים במערכות הפעלה</h1><p class="lede">'+Q.length+' שאלות מ-'+B.exams.length+' מבחנים של הקורס, כל אחת עם פתרון מלא ומנומק. בהתחלה מוצגים רק הנושאים שכבר נלמדו – אפשר להוסיף נושאים בסינון.</p>';
-  h+='<div class="tiles">'+tiles.map(t=>`<a class="tile" href="#${t[0]}"><b>${t[1]}</b><span>${t[2]}</span></a>`).join('')+'</div>';
-  h+=`<div class="panel homestat">${done?`פתרתם עד עכשיו ${done} שאלות, מתוכן ${ok} נכון לגמרי.`:'עוד לא פתרתם אף שאלה – אפשר להתחיל בתרגול.'} <a href="${STUDY}" target="_blank" rel="noopener">לאתר הלימוד ←</a></div>`;
+  const nOpen=Q.filter(q=>q.type==='open').length, years=B.exams.map(e=>+e.date.slice(-4)).filter(Boolean);
+  const nRep=Q.filter(q=>q.rep).length;
+  let h='<div class="home"><header class="hero"><div class="hero-meta"><span>המכללה האקדמית תל אביב-יפו · בית הספר למדעי המחשב</span></div>';
+  h+='<h1>מערכות הפעלה</h1><p>תרגול אינטראקטיבי למבחן · מבוסס על מבחנים אמיתיים משנים <span class="ltr">'+Math.min(...years)+'</span>–<span class="ltr">'+Math.max(...years)+'</span>, עם פתרון מלא ומנומק לכל שאלה</p>';
+  h+='<div class="hstats">'+[[Q.length,'שאלות'],[B.exams.length,'מבחנים'],[nOpen,'שאלות פתוחות'],[nRep,'חזרו במבחנים']].map(x=>`<div class="hstat"><b>${x[0]}</b><span>${x[1]}</span></div>`).join('')+'</div></header>';
+  // weak topics
+  const per={}; Object.entries(S.results).forEach(([id,r])=>{ const q=QID[id]; if(!q) return; const t=per[q.topic]=per[q.topic]||{n:0,s:0}; t.n++; t.s+=r.s; });
+  const weak=Object.entries(per).filter(([t,v])=>v.n>=3 && v.s/v.n<0.75).sort((a,b)=>a[1].s/a[1].n-b[1].s/b[1].n).slice(0,4);
+  if(weak.length) h+=`<section class="weak"><h2>◐ כדאי לחזור על</h2><div style="font-size:.85rem;color:var(--ink-2)">הנושאים שבהם ההצלחה שלכם הכי נמוכה עד עכשיו</div><div class="wl">${weak.map(([t,v])=>`<button class="wi tbadge t-${t}" data-act="topicgo" data-v="${t}"><b>${esc(TNAME[t])}</b><small>${Math.round(100*v.s/v.n)}% הצלחה · ${v.n} שאלות</small><div class="bar2"><i style="width:${Math.round(100*v.s/v.n)}%"></i></div></button>`).join('')}</div></section>`;
+  const modes=[
+    ['practice','t-process','◉','תרגול לפי נושא','שאלה אחר שאלה או כמה בעמוד, לפי נושא וסוג. בלי לחץ זמן, עם פתרון מלא אחרי כל שאלה.','לבחור נושא ←','#practice'],
+    ['exam','t-threads','⏱','סימולציית מבחן','מבחן מקורי מלא או מבחן אקראי (5 סגורות ו-3 פתוחות), עם טיימר וציון בסוף.','להתחיל מבחן ←','#exam'],
+    ['browse','t-redir','≡','גלישה במאגר','כל השאלות לפי מבחן, עם הפתרונות המלאים וחיפוש חופשי. שימושי לחזרה לפני המבחן.','לסקור שאלות ←','#browse'],
+    ['wrong','t-sched','★','טעויות ומסומנות','שאלות שטעיתם בהן ושאלות שסימנתם לחזרה – תרגול ממוקד במה שעוד לא יושב.','לתרגל טעויות ←',null],
+    ['progress','t-sync','▤','התקדמות','כמה פתרתם בכל נושא, ומה אחוז ההצלחה שלכם.','לראות התקדמות ←','#progress'],
+    ['study','t-memory','📖','אתר הסיכום','סיכום מלא של ההרצאות והתרגולים, עם הדגמות אינטראקטיביות – להעמקה לפני התרגול.','לאתר הסיכום ↗',STUDY]];
+  h+='<section><h2 class="stitle">בחרו מצב תרגול</h2><div class="modes">'+modes.map(m=>{
+    const inner=`<div class="ic">${m[2]}</div><h3>${m[3]}</h3><p>${m[4]}</p><span class="cta">${m[5]}</span>`;
+    return m[6] ? `<a class="mode ${m[1]}" href="${m[6]}"${m[0]==='study'?' target="_blank" rel="noopener"':''}>${inner}</a>` : `<button class="mode ${m[1]}" data-act="wronggo">${inner}</button>`; }).join('')+'</div></section>';
+  const DET={intro:'מבנה מערכת · מצבי מעבד · קריאות מערכת',process:'fork · exec · wait · PCB',sched:'FIFO · SJF · RR · MLFQ · Lottery',signals:'סיגנלים · זומבים · יתומים',redir:'exec · dup2 · pipe · הפניות',memory:'Paging · TLB · טבלה היררכית · החלפת דפים',
+    threads:'חוטים · מרוצים · מנעולים',sync:'סמפורים · משתני תנאי · מחסומים',deadlock:'קיפאון · הרעבה · מניעה',disk:'זמני גישה · RAID · SSD',fs:'VSFS · inode · מצביעים · קישורים'};
+  h+='<section><h2 class="stitle">נושאי הקורס</h2><div class="tgrid">'+TOPICS.map(t=>`<button class="tbadge t-${t[0]}${t[2]?'':' later'}" data-act="topicgo" data-v="${t[0]}" title="תרגול הנושא"><b>${esc(t[1])} <small style="font-weight:400;color:var(--muted)">· ${Q.filter(q=>q.topic===t[0]).length}</small></b><span>${DET[t[0]]}${t[2]?'':' · עוד לא נלמד'}</span></button>`).join('')+'</div></section>';
+  h+='<section><h2 class="stitle">מבנה המבחן</h2><div class="igrid">'+[['שאלות סגורות','5 שאלות'],['ניקוד לסגורה','5 נקודות'],['שאלות פתוחות','3 שאלות'],['ניקוד לפתוחה','25 נקודות'],['סוגי שאלות','אמריקאיות, נכון/לא נכון, פתוחות']].map(x=>`<div class="icard"><small>${x[0]}</small><b>${x[1]}</b></div>`).join('')+
+    '</div><p style="font-size:.82rem;color:var(--muted);margin:8px 0 0">זה המבנה ב-18 מתוך 31 המבחנים במאגר. בחלק מהמבחנים יש 4–5 שאלות פתוחות, ובמבחנים הישנים אין שאלות סגורות.</p></section>';
+  const done=Object.keys(S.results).filter(id=>QID[id]).length;
+  h+=`<footer class="hfoot">האתר נבנה על בסיס ${B.exams.length} מבחנים אמיתיים של הקורס. כל פתרון נבדק – רבים מהם בהרצת קוד או בחישוב.<br>${done?`פתרתם עד עכשיו ${done} שאלות.`:'כל ההתקדמות נשמרת במכשיר שלכם בלבד.'}</footer></div>`;
   return h;
 }
+HANDLERS.topicgo = b=>{ S.topics=[b.dataset.v]; S.types=TYPES.map(t=>t[0]); S.only='all'; S.pos=0; ORDER=null; save(); location.hash='practice'; };
+HANDLERS.wronggo = ()=>{ S.topics=TOPICS.map(t=>t[0]); S.types=TYPES.map(t=>t[0]); S.only='review'; S.pos=0; ORDER=null; save(); location.hash='practice'; };
 var CURVIEW = 'home';
 document.getElementById('studylink').href = STUDY;
 const VIEWS = {home, practice, exam:examView, browse, progress};

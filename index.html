@@ -69,6 +69,20 @@ h2{font-size:1.15rem;margin:0}
 .rep .mono{font-family:var(--f-mono);font-size:.85rem}
 .rep .lnk{background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;cursor:pointer;font:inherit}
 .rep .rn{color:var(--muted)}
+.fbb{border:1px solid var(--line);background:none;color:var(--ink-2);border-radius:6px;padding:1px 8px;font:inherit;font-size:.8rem;cursor:pointer}
+.fbb:hover{border-color:var(--accent);color:var(--accent)}
+.fb{border:1px solid var(--line);border-radius:10px;background:var(--sunk);padding:12px 14px;display:grid;gap:8px}
+.fb h4{margin:0;font-family:var(--f-head);font-size:.95rem}
+.fb label{display:grid;gap:4px;font-size:.9rem;color:var(--ink-2)}
+.fb label.cb{display:flex;gap:6px;align-items:center}
+.fb textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px;width:100%;box-sizing:border-box;resize:vertical}
+.fb .hint{margin:0;font-size:.82rem;color:var(--muted)}
+.fb .fbmsg{font-size:.88rem;color:var(--good)}
+.fb .fbmsg textarea{margin-top:6px}
+a.btn{text-decoration:none;display:inline-flex;align-items:center}
+.notice{background:var(--warn-soft);border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:.92rem}
+.lnk{background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;cursor:pointer;font:inherit}
+.perrow{margin-bottom:8px}
 .tag{border-radius:6px;padding:1px 8px;background:var(--sunk);color:var(--ink-2)}
 .tag.exam{font-family:var(--f-mono);background:var(--ink);color:var(--surface);font-weight:600}
 .tag.type{background:var(--accent-soft);color:var(--ink)}
@@ -273,10 +287,12 @@ const TYPES = [['tf','נכון / לא נכון'],['mcq','אמריקאית'],['op
 const TYPENAME = Object.fromEntries(TYPES);
 const LETTERS = ['א','ב','ג','ד','ה'];
 const KEY = 'os-mta-practice-v1';
+const ISSUES = 'https://github.com/EliorCh/osque/issues/new';
+const SITE = 'https://eliorch.github.io/osque/';
 const Q = B.questions; const QID = Object.fromEntries(Q.map(q=>[q.id,q]));
 
 /* ---------- state ---------- */
-let S = {topics:[...COVERED], types:['tf','mcq','open'], only:'all', results:{}, marked:[], pos:0};
+let S = {topics:[...COVERED], types:['tf','mcq','open'], only:'all', results:{}, marked:[], pos:0, per:1, order:null, osig:''};
 try{ const s = JSON.parse(localStorage.getItem(KEY)||'null'); if(s) S = Object.assign(S,s); }catch(e){}
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
 function record(id, score){ S.results[id] = {s:score, t:Date.now()}; save(); }
@@ -306,10 +322,11 @@ function table(t){
 function esc(s){ return escapeHtml(String(s)).replace(/"/g,'&quot;'); }
 
 /* ---------- filtering ---------- */
-function filtered(){
-  return Q.filter(q=> S.topics.includes(q.topic) && S.types.includes(q.type) &&
-    (S.only==='all' || (S.only==='wrong' && S.results[q.id] && S.results[q.id].s<1) || (S.only==='new' && !S.results[q.id]) || (S.only==='marked' && S.marked.includes(q.id)) || (S.only==='rep' && q.rep)));
+function onlyOk(q){
+  return S.only==='all' || (S.only==='wrong' && S.results[q.id] && S.results[q.id].s<1) || (S.only==='new' && !S.results[q.id]) || (S.only==='marked' && S.marked.includes(q.id)) || (S.only==='rep' && !!q.rep);
 }
+function filtered(){ return Q.filter(q=> S.topics.includes(q.topic) && S.types.includes(q.type) && onlyOk(q)); }
+const ONLY = [['all','הכל'],['new','שלא ניסיתי'],['wrong','טעויות'],['marked','מסומנות ★'],['rep','חזרו במבחנים']];
 function shuffle(a,seed){ a=a.slice(); let r=seed||Math.random; for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
 function rng(seed){ let x=seed>>>0||1; return ()=>{ x^=x<<13; x^=x>>>17; x^=x<<5; return ((x>>>0)%100000)/100000; }; }
 
@@ -330,7 +347,8 @@ function card(q, mode, n){
   let h = `<article class="qcard" data-id="${esc(q.id)}">
    <div class="qhead">${n?`<span class="tag">שאלה ${n}</span>`:''}<span class="tag exam" title="${esc(q.examLabel)}, ${esc(q.date)}">${esc(q.exam)} · שאלה ${esc(q.num)}</span>
    <span class="tag">${esc(TNAME[q.topic])}${q.sub?' · '+renderText(q.sub):''}</span><span class="tag type">${TYPENAME[q.type]}</span>
-   <button class="star" data-act="mark" aria-pressed="${marked}" aria-label="סימון השאלה" title="סימון לחזרה">★</button></div>`;
+   ${mode==='exam'?'':'<button class="fbb" data-act="fbopen" data-k="report" title="דיווח על טעות או בעיה בשאלה">⚑ דיווח</button><button class="fbb" data-act="fbopen" data-k="ask" title="הכנת הודעה למרצה עם כל נתוני השאלה">✉ שאלה למרצה</button>'}
+   <button class="star" data-act="mark" aria-pressed="${marked}" aria-label="סימון השאלה" title="סימון לחזרה">★</button></div><div class="fbslot"></div>`;
   if(q.rep) h += repLine(q, mode);
   h += rich(q.intro) + rich(q.q) + code(q.code) + table(q.table);
   if(q.image) h += `<details class="orig" open><summary>כפי שמופיע בטופס המבחן</summary><img src="${esc(q.image)}" alt="הטבלה מטופס המבחן המקורי" loading="lazy"></details>`;
@@ -451,15 +469,67 @@ function markClosed(art,q,chosenBtn,ok){
 }
 const HANDLERS = {};
 
+/* ---------- report a problem / ask the lecturer ---------- */
+function tableText(t){ return t ? [t.headers.join(' | ')].concat(t.rows.map(r=>r.join(' | '))).join('\n') : ''; }
+function clean(t){ return String(t||'').replace(/\[\[TREE\]\]/g,'(עץ התהליכים מצויר באתר)').trim(); }
+function qText(q, withSol){
+  const out=[]; const add=t=>{ t=clean(t); if(t) out.push(t); };
+  add(q.intro); add(q.q); add(q.code); add(tableText(q.table));
+  if(q.type==='tf') add('(נכון / לא נכון)');
+  if(q.type==='mcq') add(q.options.map(o=>'• '+o).join('\n'));
+  (q.parts||[]).forEach(p=>{ add((p.label?p.label+'. ':'')+(p.q||'')); add(p.code); add(tableText(p.table)); });
+  if(withSol){
+    let sol = q.type==='mcq' ? 'התשובה הנכונה: '+q.options[q.correct] : q.type==='tf' ? 'התשובה: '+(q.correct?'נכון':'לא נכון') :
+      (q.parts&&q.parts.length ? q.parts.map(p=>(p.label?p.label+'. ':'')+clean(p.answer)+(p.atable?'\n'+tableText(p.atable):'')).join('\n\n') : clean(q.answer));
+    out.push('---\nהפתרון שמופיע באתר התרגול:\n'+sol);
+  }
+  return out.join('\n\n');
+}
+function qHead(q){ return `שאלה ${q.num} במבחן ${q.examLabel} (${q.date})`; }
+function fbPanel(q,k){
+  if(k==='report') return `<div class="fb" data-k="report"><h4>דיווח על בעיה בשאלה</h4>
+    <label>מה לא בסדר? (טעות בפתרון, נתון חסר, ניסוח לא ברור...)<textarea rows="3" class="fbt"></textarea></label>
+    <div class="bar"><a class="btn" data-act="fbgh" target="_blank" rel="noopener" href="#">שליחה דרך GitHub</a><button class="btn ghost" data-act="fbcopy">העתקת הדיווח</button><button class="btn ghost" data-act="fbclose">סגירה</button></div>
+    <p class="hint">השליחה פותחת דיווח חדש (issue) באתר GitHub, עם פרטי השאלה כבר בפנים, ואני מקבל עליו התראה. צריך חשבון GitHub. אין חשבון? אפשר להעתיק ולשלוח בכל דרך אחרת.</p><div class="fbmsg"></div></div>`;
+  return `<div class="fb" data-k="ask"><h4>שאלה למרצה</h4>
+    <label>מה לא ברור לך בשאלה?<textarea rows="3" class="fbt"></textarea></label>
+    <label class="cb"><input type="checkbox" class="fbsol"> לצרף את הפתרון מאתר התרגול</label>
+    <div class="bar"><button class="btn" data-act="fbcopy">העתקת ההודעה</button><a class="btn ghost" data-act="fbmail" href="#">פתיחה במייל</a><button class="btn ghost" data-act="fbclose">סגירה</button></div>
+    <p class="hint">ההודעה כוללת את כל נתוני השאלה (כולל הקוד והטבלאות), כך שהמרצה לא צריך לחפש את המבחן. הדביקו אותה במייל או בפורום הקורס.</p><div class="fbmsg"></div></div>`;
+}
+function fbText(art,q){
+  const box=art.querySelector('.fb'), k=box.dataset.k, t=box.querySelector('.fbt').value.trim();
+  if(k==='report') return `דיווח על ${q.id} – ${qHead(q)}\n\nהבעיה:\n${t||'(לא נכתב תיאור)'}\n\nקישור לשאלה: ${SITE}#q=${q.id}\n\nהשאלה:\n${qText(q,false)}`;
+  const sol = box.querySelector('.fbsol').checked;
+  return `שלום,\nיש לי שאלה לגבי ${qHead(q)}.\n\nהשאלה:\n${qText(q,sol)}\n\nמה שלא ברור לי:\n${t||'...'}\n\nתודה רבה`;
+}
+function copyText(t, msgEl){
+  const done = ok => { msgEl.innerHTML = ok ? 'הועתק ✓' : 'ההעתקה האוטומטית נחסמה. סמנו והעתיקו מכאן:<textarea rows="6" readonly></textarea>'; if(!ok){ const ta=msgEl.querySelector('textarea'); ta.value=t; ta.select(); } };
+  const legacy = ()=>{ try{ const ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); const ok=document.execCommand('copy'); ta.remove(); done(ok); }catch(e){ done(false); } };
+  try{ navigator.clipboard.writeText(t).then(()=>done(true), legacy); }catch(e){ legacy(); }
+}
+HANDLERS.fbopen = b=>{ const art=b.closest('.qcard'), q=QID[art.dataset.id], slot=art.querySelector('.fbslot'), k=b.dataset.k;
+  const cur=slot.querySelector('.fb'); if(cur && cur.dataset.k===k){ slot.innerHTML=''; return; }
+  slot.innerHTML=fbPanel(q,k); slot.querySelector('.fbt').focus(); };
+HANDLERS.fbclose = b=>{ b.closest('.fbslot').innerHTML=''; };
+HANDLERS.fbcopy = b=>{ const art=b.closest('.qcard'); copyText(fbText(art,QID[art.dataset.id]), art.querySelector('.fbmsg')); };
+HANDLERS.fbgh = b=>{ const art=b.closest('.qcard'), q=QID[art.dataset.id], t=art.querySelector('.fbt').value.trim();
+  let body=fbText(art,q); while(encodeURIComponent(body).length>6500) body=body.slice(0,Math.floor(body.length*0.85));
+  if(body!==fbText(art,q)) body+='\n…(קוצר)';
+  b.href = ISSUES+'?title='+encodeURIComponent(`[${q.id}] `+(t.split('\n')[0].slice(0,70)||'בעיה בשאלה'))+'&body='+encodeURIComponent(body); };
+HANDLERS.fbmail = b=>{ const art=b.closest('.qcard'), q=QID[art.dataset.id];
+  b.href = 'mailto:?subject='+encodeURIComponent('שאלה על '+qHead(q))+'&body='+encodeURIComponent(fbText(art,q)); };
+
 /* ---------- filters UI ---------- */
 function filtersHTML(showOnly){
-  const cnt = t => Q.filter(q=>q.topic===t && S.types.includes(q.type)).length;
+  const ok = q => !showOnly || onlyOk(q);
+  const cnt = t => Q.filter(q=>q.topic===t && S.types.includes(q.type) && ok(q)).length;
   let h = '<div class="panel filters">';
   h += '<div class="frow"><span class="flabel">נלמד</span>'+TOPICS.filter(t=>t[2]).map(t=>chip('topic',t[0],t[1],cnt(t[0]),S.topics.includes(t[0]))).join('')+'</div>';
   h += '<div class="frow"><span class="flabel">עוד לא</span>'+TOPICS.filter(t=>!t[2]).map(t=>chip('topic',t[0],t[1],cnt(t[0]),S.topics.includes(t[0]),'later')).join('')+'</div>';
-  h += '<div class="frow"><span class="flabel">סוג</span>'+TYPES.map(t=>chip('type',t[0],t[1],Q.filter(q=>q.type===t[0]&&S.topics.includes(q.topic)).length,S.types.includes(t[0]))).join('')+
-       '<span style="flex-basis:12px"></span><button class="chip" data-act="preset" data-p="covered">רק מה שנלמד</button><button class="chip" data-act="preset" data-p="all">כל הנושאים</button></div>';
-  if(showOnly) h += '<div class="frow"><span class="flabel">הצג</span>'+[['all','הכל'],['new','שלא ניסיתי'],['wrong','טעויות'],['marked','מסומנות ★'],['rep','חזרו במבחנים']].map(o=>`<button class="chip" data-act="only" data-v="${o[0]}" aria-pressed="${S.only===o[0]}">${o[1]}</button>`).join('')+'</div>';
+  h += '<div class="frow"><span class="flabel">סוג</span>'+TYPES.map(t=>chip('type',t[0],t[1],Q.filter(q=>q.type===t[0]&&S.topics.includes(q.topic)&&ok(q)).length,S.types.includes(t[0]))).join('')+'</div>';
+  h += '<div class="frow"><span class="flabel">בחירה</span><button class="chip" data-act="preset" data-p="covered">רק מה שנלמד</button><button class="chip" data-act="preset" data-p="all">כל הנושאים</button><button class="chip" data-act="preset" data-p="none">ביטול סימון הכל</button></div>';
+  if(showOnly) h += '<div class="frow"><span class="flabel">הצג</span>'+ONLY.map(o=>`<button class="chip" data-act="only" data-v="${o[0]}" aria-pressed="${S.only===o[0]}">${o[1]}</button>`).join('')+'</div>';
   return h+'</div>';
 }
 function chip(kind,v,label,n,on,cls){ return `<button class="chip ${cls||''}" data-act="f${kind}" data-v="${v}" aria-pressed="${on}">${esc(label)}<span class="n">${n}</span></button>`; }
@@ -467,28 +537,41 @@ function toggle(arr,v){ const i=arr.indexOf(v); if(i<0) arr.push(v); else arr.sp
 HANDLERS.ftopic = b=>{ toggle(S.topics,b.dataset.v); S.pos=0; ORDER=null; save(); render(); };
 HANDLERS.ftype = b=>{ toggle(S.types,b.dataset.v); S.pos=0; ORDER=null; save(); render(); };
 HANDLERS.only = b=>{ S.only=b.dataset.v; S.pos=0; ORDER=null; save(); render(); };
-HANDLERS.preset = b=>{ S.topics = b.dataset.p==='all' ? TOPICS.map(t=>t[0]) : [...COVERED]; S.pos=0; ORDER=null; save(); render(); };
+HANDLERS.preset = b=>{ const v=b.dataset.p; S.topics = v==='all' ? TOPICS.map(t=>t[0]) : v==='none' ? [] : [...COVERED]; S.pos=0; ORDER=null; save(); render(); };
 
 /* ---------- practice ---------- */
 let ORDER = null;
+function osig(){ return JSON.stringify([S.topics.slice().sort(),S.types.slice().sort(),S.only]); }
 function practice(){
-  const list = filtered();
-  if(!ORDER || ORDER.length!==list.length || ORDER.some(id=>!QID[id])) ORDER = shuffle(list.map(q=>q.id));
+  const list = filtered(), sig = osig();
+  // the order is frozen for a filter setting: answering a question (which changes "new"/"wrong") never reshuffles or skips
+  if(!ORDER && S.order && S.osig===sig && S.order.every(id=>QID[id])) ORDER = S.order;
+  if(!ORDER || !ORDER.every(id=>QID[id])){ ORDER = shuffle(list.map(q=>q.id)); S.pos=0; }
+  if(S.order!==ORDER || S.osig!==sig){ S.order=ORDER; S.osig=sig; save(); }
+  const per = S.per||ORDER.length||1;
   if(S.pos>=ORDER.length) S.pos=0;
-  let h = '<h1>תרגול</h1><p class="lede">שאלה אחת בכל פעם, מכל המבחנים, בסדר אקראי. בשאלות סגורות התשובה נבדקת מיד; בשאלות פתוחות חושפים את הפתרון לכל סעיף ומדרגים את עצמכם.</p>';
+  S.pos = Math.floor(S.pos/per)*per;
+  let h = '<h1>תרגול</h1><p class="lede">שאלות מכל המבחנים, בסדר אקראי. בשאלות סגורות התשובה נבדקת מיד; בשאלות פתוחות חושפים את הפתרון לכל סעיף ומדרגים את עצמכם.</p>';
   h += filtersHTML(true);
+  if(S.only!=='all') h += `<div class="notice">מוצגות רק שאלות מהסוג "${ONLY.find(o=>o[0]===S.only)[1]}". <button class="lnk" data-act="only" data-v="all">הצגת כל השאלות</button></div>`;
   if(!ORDER.length) return h+'<div class="panel empty">אין שאלות שמתאימות לסינון. הוסיפו נושא או סוג שאלה.</div>';
-  h += `<div class="bar"><span class="count">${S.pos+1} / ${ORDER.length}</span>
-    <button class="btn ghost" data-act="prev" ${S.pos===0?'disabled':''}>הקודמת</button>
-    <button class="btn ghost" data-act="reshuffle">ערבוב</button>
-    <button class="btn" data-act="next">הבאה</button></div>`;
-  h += card(QID[ORDER[S.pos]], 'practice');
+  const end = Math.min(S.pos+per, ORDER.length);
+  const bar = (bottom)=>`<div class="bar"><span class="count">${per===1?S.pos+1:(S.pos+1)+'–'+end} / ${ORDER.length}</span>
+    <button class="btn ghost" data-act="prev" ${S.pos===0?'disabled':''}>${per===1?'הקודמת':'העמוד הקודם'}</button>
+    ${bottom?'':'<button class="btn ghost" data-act="reshuffle">ערבוב</button>'}
+    <button class="btn" data-act="next">${per===1?'הבאה':'העמוד הבא'}</button></div>`;
+  h += `<div class="frow perrow"><span class="flabel">בכל עמוד</span>${[1,5,10,20,0].map(n=>`<button class="chip" data-act="per" data-v="${n}" aria-pressed="${(S.per||0)===n}">${n||'הכל'}</button>`).join('')}</div>`;
+  h += bar(false);
+  h += '<div class="list">'+ORDER.slice(S.pos,end).map((id,i)=>card(QID[id],'practice',per===1?0:S.pos+i+1)).join('')+'</div>';
+  if(end-S.pos>1) h += bar(true);
   return h;
 }
-HANDLERS.next = ()=>{ S.pos = (S.pos+1)%ORDER.length; save(); render(true); };
-HANDLERS.prev = ()=>{ S.pos = Math.max(0,S.pos-1); save(); render(true); };
+HANDLERS.per = b=>{ S.per=+b.dataset.v; save(); render(); };
+HANDLERS.next = ()=>{ const per=S.per||ORDER.length; S.pos = S.pos+per>=ORDER.length ? 0 : S.pos+per; save(); render(true); };
+HANDLERS.prev = ()=>{ S.pos = Math.max(0,S.pos-(S.per||ORDER.length)); save(); render(true); };
 HANDLERS.reshuffle = ()=>{ ORDER=null; S.pos=0; save(); render(true); };
-HANDLERS.goto = b=>{ const id=b.dataset.id; S.topics = Array.from(new Set(S.topics.concat(QID[id].topic))); if(!S.types.includes(QID[id].type)) S.types.push(QID[id].type); S.only='all'; ORDER=null; save(); const l=filtered().map(q=>q.id); ORDER=[id].concat(shuffle(l.filter(x=>x!==id))); S.pos=0; location.hash='practice'; render(true); };
+function openQ(id){ if(!QID[id]) return; S.topics = Array.from(new Set(S.topics.concat(QID[id].topic))); if(!S.types.includes(QID[id].type)) S.types.push(QID[id].type); S.only='all'; ORDER=null; save(); const l=filtered().map(q=>q.id); ORDER=[id].concat(shuffle(l.filter(x=>x!==id))); S.pos=0; S.order=ORDER; S.osig=osig(); save(); if(location.hash!=='#practice') history.replaceState(null,'','#practice'); render(true); }
+HANDLERS.goto = b=>openQ(b.dataset.id);
 
 /* ---------- exam simulation ---------- */
 function examView(){
@@ -609,7 +692,9 @@ HANDLERS.resetno = ()=>render();
 /* ---------- router ---------- */
 const VIEWS = {practice, exam:examView, browse, progress};
 function render(top){
-  let v = location.hash.slice(1); if(!VIEWS[v]) v='practice';
+  let v = location.hash.slice(1);
+  if(v.startsWith('q=')){ const id=decodeURIComponent(v.slice(2)); history.replaceState(null,'','#practice'); if(QID[id]) return openQ(id); v='practice'; }
+  if(!VIEWS[v]) v='practice';
   document.querySelectorAll('nav.tabs a').forEach(a=>a.setAttribute('aria-current', a.dataset.view===v?'page':'false'));
   const app=document.getElementById('app'); app.innerHTML = VIEWS[v]();
   if(v==='browse'){ fillBrowse(); const s=document.getElementById('bq'); s.addEventListener('input',()=>{ QUERY=s.value; clearTimeout(window.__bt); window.__bt=setTimeout(fillBrowse,200); }); }

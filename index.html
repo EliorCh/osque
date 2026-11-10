@@ -534,10 +534,10 @@ function filtersHTML(showOnly){
 }
 function chip(kind,v,label,n,on,cls){ return `<button class="chip ${cls||''}" data-act="f${kind}" data-v="${v}" aria-pressed="${on}">${esc(label)}<span class="n">${n}</span></button>`; }
 function toggle(arr,v){ const i=arr.indexOf(v); if(i<0) arr.push(v); else arr.splice(i,1); }
-HANDLERS.ftopic = b=>{ toggle(S.topics,b.dataset.v); S.pos=0; ORDER=null; save(); render(); };
+HANDLERS.ftopic = b=>{ toggle(S.topics,b.dataset.v); if(!S.types.length) S.types=TYPES.map(t=>t[0]); S.pos=0; ORDER=null; save(); render(); };
 HANDLERS.ftype = b=>{ toggle(S.types,b.dataset.v); S.pos=0; ORDER=null; save(); render(); };
-HANDLERS.only = b=>{ S.only=b.dataset.v; S.pos=0; ORDER=null; save(); render(); };
-HANDLERS.preset = b=>{ const v=b.dataset.p; S.topics = v==='all' ? TOPICS.map(t=>t[0]) : v==='none' ? [] : [...COVERED]; S.pos=0; ORDER=null; save(); render(); };
+HANDLERS.only = b=>{ S.only=b.dataset.v; if(S.only==='all' || !S.types.length) S.types=TYPES.map(t=>t[0]); S.pos=0; ORDER=null; save(); render(); };
+HANDLERS.preset = b=>{ const v=b.dataset.p; S.topics = v==='all' ? TOPICS.map(t=>t[0]) : v==='none' ? [] : [...COVERED]; if(v!=='none') S.types=TYPES.map(t=>t[0]); S.pos=0; ORDER=null; save(); render(); };
 
 /* ---------- practice ---------- */
 let ORDER = null;

@@ -83,6 +83,9 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center}
 .notice{background:var(--warn-soft);border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:.92rem}
 .lnk{background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;cursor:pointer;font:inherit}
 .perrow{margin-bottom:8px}
+.myans{display:grid;gap:4px;font-size:.85rem;color:var(--muted)}
+.myans textarea{font:inherit;font-size:.95rem;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;box-sizing:border-box;resize:vertical;min-height:4.5em;line-height:1.5}
+.myans textarea:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
 .tag{border-radius:6px;padding:1px 8px;background:var(--sunk);color:var(--ink-2)}
 .tag.exam{font-family:var(--f-mono);background:var(--ink);color:var(--surface);font-weight:600}
 .tag.type{background:var(--accent-soft);color:var(--ink)}
@@ -362,6 +365,7 @@ function card(q, mode, n){
     const parts = q.parts && q.parts.length ? q.parts : [{label:null,q:'',answer:q.answer}];
     parts.forEach((p,i)=>{
       h += `<div class="part" data-pi="${i}">${p.label?`<div class="plabel" dir="ltr">${esc(p.label)}</div>`:''}${rich(p.q)}${code(p.code)}${table(p.table)}
+        ${mode==='review'?'':`<label class="myans"><span>התשובה שלי${mode==='exam'?'':' (נשמרת במכשיר הזה)'}</span><textarea dir="auto" rows="3" data-pi="${i}" data-save="${mode==='exam'?0:1}" placeholder="כתבו כאן את התשובה, ואז השוו לפתרון">${mode==='exam'?'':esc(myAns(q.id,i))}</textarea></label>`}
         <div class="bar">${mode==='review'?'':'<button class="btn ghost" data-act="reveal">הצג פתרון</button>'}</div><div class="slot"></div></div>`;
     });
     h += '<div class="slot final"></div>';
@@ -435,6 +439,18 @@ function openScore(art){
 
 /* ---------- interactions (shared) ---------- */
 let EXAM = null; // {qs, submitted, end, timer}
+/* ---------- student's own answers (open questions) ---------- */
+const AKEY='os-mta-answers-v1'; let ANS={};
+try{ ANS=JSON.parse(localStorage.getItem(AKEY)||'{}')||{}; }catch(e){}
+function myAns(id,pi){ return (ANS[id]&&ANS[id][pi])||''; }
+function grow(t){ t.style.height='auto'; t.style.height=(t.scrollHeight+2)+'px'; }
+document.addEventListener('input', e=>{
+  const t=e.target; if(!t.matches || !t.matches('.myans textarea')) return;
+  grow(t);
+  if(t.dataset.save==='1'){ const id=t.closest('.qcard').dataset.id, pi=t.dataset.pi;
+    if(t.value.trim()){ (ANS[id]=ANS[id]||{})[pi]=t.value; } else if(ANS[id]){ delete ANS[id][pi]; if(!Object.keys(ANS[id]).length) delete ANS[id]; }
+    clearTimeout(window.__as); window.__as=setTimeout(()=>{ try{ localStorage.setItem(AKEY, JSON.stringify(ANS)); }catch(e){} },300); }
+});
 document.addEventListener('click', e=>{
   const b = e.target.closest('[data-act]'); if(!b) return;
   const art = b.closest('.qcard'); const q = art ? QID[art.dataset.id] : null;
@@ -699,6 +715,7 @@ function render(top){
   const app=document.getElementById('app'); app.innerHTML = VIEWS[v]();
   if(v==='browse'){ fillBrowse(); const s=document.getElementById('bq'); s.addEventListener('input',()=>{ QUERY=s.value; clearTimeout(window.__bt); window.__bt=setTimeout(fillBrowse,200); }); }
   if(v==='exam' && EXAM){ updateExamScore(); }
+  app.querySelectorAll('.myans textarea').forEach(t=>{ if(t.value) grow(t); });
   if(top) window.scrollTo(0,0);
 }
 window.addEventListener('hashchange',()=>render(true));

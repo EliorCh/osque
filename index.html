@@ -82,7 +82,8 @@ h2{font-size:1.15rem;margin:0}
 .fb label.cb{display:flex;gap:6px;align-items:center}
 .fb textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px;width:100%;box-sizing:border-box;resize:vertical}
 .fb input.fbname{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 8px;max-width:260px}
-.mailprev{white-space:pre-wrap;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-size:.9rem;color:var(--ink);max-height:340px;overflow:auto;unicode-bidi:plaintext}
+.lect{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:.9rem;color:var(--ink-2)}
+.mailprev{white-space:pre-wrap;text-align:start;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-size:.9rem;color:var(--ink);max-height:340px;overflow:auto;unicode-bidi:plaintext}
 .fb .hint{margin:0;font-size:.82rem;color:var(--muted)}
 .fb .fbmsg{font-size:.88rem;color:var(--good)}
 .fb .fbmsg textarea{margin-top:6px}
@@ -348,6 +349,7 @@ const LETTERS = ['א','ב','ג','ד','ה'];
 const KEY = 'os-mta-practice-v1';
 const ISSUES = 'https://github.com/EliorCh/osque/issues/new';
 const SITE = 'https://eliorch.github.io/osque/';
+const LECT = [['משה סולאמי רדליך','moshesu@mta.ac.il'],['בוראק מאדי','boraqma@mta.ac.il']];
 const Q = B.questions; const QID = Object.fromEntries(Q.map(q=>[q.id,q]));
 
 /* ---------- state ---------- */
@@ -573,6 +575,7 @@ function fbPanel(q,k){
   let name=''; try{ name=localStorage.getItem('os-mta-name')||''; }catch(e){}
   return `<div class="fb" data-k="ask"><h4>מייל למרצה על השאלה</h4>
     <label>מה תרצה לשאול?<textarea rows="3" class="fbt" placeholder="למשל: לא הבנתי למה בסעיף 6.1 תהליך 45 נכנס לתנאי"></textarea></label>
+    <div class="lect"><span>למי לשלוח?</span>${LECT.map((l,i)=>`<button class="chip" data-act="lect" data-i="${i}" aria-pressed="${lectSel().includes(i)}">${l[0]}</button>`).join('')}</div>
     <label>השם שלך (לחתימה)<input class="fbname" value="${esc(name)}"></label>
     ${hasMine?'<label class="cb"><input type="checkbox" class="fbmine" checked> לצרף את התשובה שכתבתי</label>':''}
     <label class="cb"><input type="checkbox" class="fbsol"> לצרף את הפתרון שאני מכיר לשאלה</label>
@@ -580,6 +583,10 @@ function fbPanel(q,k){
     <div class="bar"><button class="btn" data-act="fbcopy">העתקת המייל</button><a class="btn ghost" data-act="fbmail" href="#">פתיחה בתוכנת המייל</a><button class="btn ghost" data-act="fbclose">סגירה</button></div>
     <div class="fbmsg"></div></div>`;
 }
+function lectSel(){ try{ return JSON.parse(localStorage.getItem('os-mta-lect')||'[]'); }catch(e){ return []; } }
+HANDLERS.lect = b=>{ const i=+b.dataset.i; let sel=lectSel(); sel = sel.includes(i) ? sel.filter(x=>x!==i) : sel.concat(i).sort();
+  try{ localStorage.setItem('os-mta-lect', JSON.stringify(sel)); }catch(e){}
+  b.parentElement.querySelectorAll('[data-act="lect"]').forEach(c=>c.setAttribute('aria-pressed', sel.includes(+c.dataset.i))); updPrev(b.closest('.fb')); };
 function fbText(art,q){
   const box=art.querySelector('.fb'), k=box.dataset.k, t=box.querySelector('.fbt').value.trim();
   if(k==='report') return `דיווח על ${q.id} – ${qHead(q)}\n\nהבעיה:\n${t||'(לא נכתב תיאור)'}\n\nקישור לשאלה: ${SITE}#q=${q.id}\n\nהשאלה:\n${qText(q,false)}`;
@@ -589,14 +596,14 @@ function fbText(art,q){
     mine = parts.map((p,i)=>myAns(q.id,i).trim()?(p.label?p.label+'. ':'')+myAns(q.id,i).trim():'').filter(Boolean).join('\n\n'); }
   const L=[];
   L.push('שלום,','',`בהכנה למבחן עברתי על ${qHead(q).replace(/^שאלה/,'שאלה')}, ויש לי שאלה לגביה.`,'');
-  L.push(t||'[כאן תכתוב את השאלה]','');
+  L.push(t||'(כאן תכתוב את השאלה שלך)','');
   L.push('לנוחותך, זה נוסח השאלה:','──────────',qText(q,false),'──────────','');
   if(mine) L.push('התשובה שלי:',mine,'');
   if(sol) L.push('הפתרון שאני מכיר לשאלה:',qText(q,true).slice(qText(q,false).length).trim(),'');
   L.push('תודה רבה,', name||'');
   return L.join('\n').trim();
 }
-function updPrev(box){ const art=box.closest('.qcard'); const pv=box.querySelector('.mailprev'); if(pv) pv.textContent=fbText(art,QID[art.dataset.id]); }
+function updPrev(box){ const art=box.closest('.qcard'); const pv=box.querySelector('.mailprev'); const to=lectSel().map(i=>LECT[i][0]+' – '+LECT[i][1]).join(', '); if(pv) pv.innerHTML=((to?'אל: '+to+'\n\n':'')+fbText(art,QID[art.dataset.id])).split('\n').map(l=>l.trim()?`<div dir="auto">${escapeHtml(l)}</div>`:'<div>&nbsp;</div>').join(''); }
 document.addEventListener('input', e=>{ const box=e.target.closest && e.target.closest('.fb[data-k="ask"]'); if(!box) return;
   if(e.target.classList.contains('fbname')){ try{ localStorage.setItem('os-mta-name', e.target.value); }catch(_){} }
   updPrev(box); });
@@ -616,7 +623,7 @@ HANDLERS.fbgh = b=>{ const art=b.closest('.qcard'), q=QID[art.dataset.id], t=art
   if(body!==fbText(art,q)) body+='\n…(קוצר)';
   b.href = ISSUES+'?title='+encodeURIComponent(`[${q.id}] `+(t.split('\n')[0].slice(0,70)||'בעיה בשאלה'))+'&body='+encodeURIComponent(body); };
 HANDLERS.fbmail = b=>{ const art=b.closest('.qcard'), q=QID[art.dataset.id];
-  b.href = 'mailto:?subject='+encodeURIComponent('שאלה לגבי '+qHead(q))+'&body='+encodeURIComponent(fbText(art,q)); };
+  b.href = 'mailto:'+lectSel().map(i=>LECT[i][1]).join(',')+'?subject='+encodeURIComponent('שאלה לגבי '+qHead(q))+'&body='+encodeURIComponent(fbText(art,q)); };
 
 /* ---------- filters UI ---------- */
 function filtersHTML(showOnly){

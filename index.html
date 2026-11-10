@@ -135,7 +135,8 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center}
 .chip.tc[aria-pressed="true"]{background:color-mix(in srgb,var(--tc) 30%,var(--surface));border-color:var(--tc)}
 .tag.exam{font-family:var(--f-mono);background:var(--ink);color:var(--surface);font-weight:600}
 .tag.type{background:var(--accent-soft);color:var(--ink)}
-.star{margin-inline-start:auto;border:1px solid var(--line);background:none;font:inherit;font-size:.8rem;border-radius:6px;padding:1px 8px;cursor:pointer;color:var(--ink-2)}
+.acts{margin-inline-start:auto;display:inline-flex;flex-wrap:wrap;gap:6px;align-items:center}
+.star{border:1px solid var(--line);background:none;font:inherit;font-size:.8rem;border-radius:6px;padding:1px 8px;cursor:pointer;color:var(--ink-2)}
 .star:hover{border-color:var(--warn)}
 .star[aria-pressed="true"]{color:var(--warn);border-color:var(--warn);background:var(--warn-soft)}
 .src{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:8px}
@@ -405,8 +406,8 @@ function card(q, mode, n){
   let h = `<article class="qcard" data-id="${esc(q.id)}">
    <div class="qhead">${n?`<span class="tag">שאלה ${n}</span>`:''}<span class="tag exam" title="${esc(q.examLabel)}, ${esc(q.date)}">${esc(q.exam)} · שאלה ${esc(q.num)}</span>
    <span class="tag topic t-${q.topic}">${esc(TNAME[q.topic])}${q.sub?' · '+renderText(q.sub):''}</span><span class="tag type">${TYPENAME[q.type]}</span>
-   ${mode==='exam'?'':'<button class="fbb" data-act="fbopen" data-k="report" title="דיווח על טעות או בעיה בשאלה">⚑ דיווח</button><button class="fbb" data-act="fbopen" data-k="ask" title="הכנת הודעה למרצה עם כל נתוני השאלה">✉ שאלה למרצה</button>'}
-   <button class="star" data-act="mark" aria-pressed="${marked}">${marked?'★ מסומנת':'☆ סמן לחזרה'}</button></div><div class="fbslot"></div>`;
+   <span class="acts">${mode==='exam'?'':'<button class="fbb" data-act="fbopen" data-k="report" title="דיווח על טעות או בעיה בשאלה">⚑ דיווח</button><button class="fbb" data-act="fbopen" data-k="ask" title="הכנת הודעה למרצה עם כל נתוני השאלה">✉ שאלה למרצה</button>'}
+   <button class="star" data-act="mark" aria-pressed="${marked}">${marked?'★ מסומנת':'☆ סמן לחזרה'}</button></span></div><div class="fbslot"></div>`;
   if(q.rep) h += repLine(q, mode);
   h += rich(q.intro) + rich(q.q) + code(q.code) + table(q.table);
   if(q.image) h += `<details class="orig" open><summary>כפי שמופיע בטופס המבחן</summary><img src="${esc(q.image)}" alt="הטבלה מטופס המבחן המקורי" loading="lazy"></details>`;

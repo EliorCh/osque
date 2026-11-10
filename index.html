@@ -36,10 +36,11 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .wrap{max-width:900px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
 header.top .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding-block:10px}
-.brand{font-family:var(--f-head);font-weight:700;font-size:1.05rem;display:flex;align-items:baseline;gap:8px}
+.brand{color:inherit;text-decoration:none;font-family:var(--f-head);font-weight:700;font-size:1.05rem;display:flex;align-items:baseline;gap:8px}
 .brand small{font-family:var(--f-mono);font-weight:400;font-size:.75rem;color:var(--muted)}
 nav.tabs{display:flex;gap:4px;flex-wrap:wrap;margin-inline-start:auto}
 nav.tabs a{color:var(--ink-2);text-decoration:none;padding:6px 12px;border-radius:999px;font-weight:500;font-size:.95rem}
+nav.tabs a.ext{border:1px solid var(--accent);color:var(--accent)}
 nav.tabs a[aria-current="page"]{background:var(--accent);color:var(--accent-ink)}
 nav.tabs a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 main{padding-block:20px 60px}
@@ -88,6 +89,16 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center}
 .myans{display:grid;gap:4px;font-size:.85rem;color:var(--muted)}
 .myans textarea{font:inherit;font-size:.95rem;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;box-sizing:border-box;resize:vertical;min-height:4.5em;line-height:1.5}
 .myans textarea:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:12px;margin-bottom:14px}
+.tile{display:grid;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;text-decoration:none;color:var(--ink)}
+.tile b{font-family:var(--f-head);font-size:1.1rem;color:var(--accent)}
+.tile span{color:var(--ink-2);font-size:.92rem}
+.tile:hover{border-color:var(--accent)}
+.homestat{display:flex;flex-wrap:wrap;gap:8px 16px;justify-content:space-between}
+.homestat a{color:var(--accent)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:grid;place-items:center;z-index:50;padding:16px}
+.modal>div{background:var(--surface);border-radius:12px;padding:18px 20px;max-width:380px;display:grid;gap:12px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.modal p{margin:0}
 .tag{border-radius:6px;padding:1px 8px;background:var(--sunk);color:var(--ink-2)}
 .tag.exam{font-family:var(--f-mono);background:var(--ink);color:var(--surface);font-weight:600}
 .tag.type{background:var(--accent-soft);color:var(--ink)}
@@ -154,12 +165,13 @@ select,input[type=search]{font:inherit;border:1px solid var(--line);border-radiu
 </style>
 
 <header class="top"><div class="wrap">
-  <div class="brand">מערכות הפעלה <small>31 מבחנים · 242 שאלות</small></div>
+  <a class="brand" href="#home" title="לעמוד הראשי">מערכות הפעלה <small>31 מבחנים · 242 שאלות</small></a>
   <nav class="tabs" aria-label="מצבי עבודה">
     <a href="#practice" data-view="practice">תרגול</a>
     <a href="#exam" data-view="exam">סימולציית מבחן</a>
     <a href="#browse" data-view="browse">כל המאגר</a>
     <a href="#progress" data-view="progress">התקדמות</a>
+    <a id="studylink" class="ext" href="#" target="_blank" rel="noopener">אתר הלימוד ↗</a>
   </nav>
 </div></header>
 <main class="wrap" id="app"></main>
@@ -571,16 +583,17 @@ function filtersHTML(showOnly){
   let h = '<div class="panel filters">';
   h += '<div class="frow"><span class="flabel">נלמד</span>'+TOPICS.filter(t=>t[2]).map(t=>chip('topic',t[0],t[1],cnt(t[0]),S.topics.includes(t[0]))).join('')+'</div>';
   h += '<div class="frow"><span class="flabel">עוד לא</span>'+TOPICS.filter(t=>!t[2]).map(t=>chip('topic',t[0],t[1],cnt(t[0]),S.topics.includes(t[0]),'later')).join('')+'</div>';
-  h += '<div class="frow"><span class="flabel">סוג</span>'+TYPES.map(t=>chip('type',t[0],t[1],Q.filter(q=>q.type===t[0]&&S.topics.includes(q.topic)&&ok(q)).length,S.types.includes(t[0]))).join('')+'</div>';
+  h += '<div class="frow"><span class="flabel">סוג</span>'+TYPES.map(t=>chip('type',t[0],t[1],Q.filter(q=>q.type===t[0]&&S.topics.includes(q.topic)&&ok(q)).length,S.types.includes(t[0]))).join('')+'<button class="chip" data-act="alltypes">כל הסוגים</button></div>';
   h += '<div class="frow"><span class="flabel">בחירה</span><button class="chip" data-act="preset" data-p="covered">רק מה שנלמד</button><button class="chip" data-act="preset" data-p="all">כל הנושאים</button><button class="chip" data-act="preset" data-p="none">ביטול סימון הכל</button></div>';
   if(showOnly) h += '<div class="frow"><span class="flabel">הצג</span>'+ONLY.map(o=>`<button class="chip" data-act="only" data-v="${o[0]}" aria-pressed="${S.only===o[0]}">${o[1]}</button>`).join('')+'</div>';
   return h+'</div>';
 }
 function chip(kind,v,label,n,on,cls){ return `<button class="chip ${cls||''}" data-act="f${kind}" data-v="${v}" aria-pressed="${on}">${esc(label)}<span class="n">${n}</span></button>`; }
 function toggle(arr,v){ const i=arr.indexOf(v); if(i<0) arr.push(v); else arr.splice(i,1); }
-HANDLERS.ftopic = b=>{ toggle(S.topics,b.dataset.v); if(!S.types.length) S.types=TYPES.map(t=>t[0]); S.pos=0; ORDER=null; save(); render(); };
+HANDLERS.ftopic = b=>{ toggle(S.topics,b.dataset.v); if(S.topics.includes(b.dataset.v) || !S.types.length) S.types=TYPES.map(t=>t[0]); S.pos=0; ORDER=null; save(); render(); };
 HANDLERS.ftype = b=>{ toggle(S.types,b.dataset.v); S.pos=0; ORDER=null; save(); render(); };
 HANDLERS.only = b=>{ S.only=b.dataset.v; if(S.only==='all' || !S.types.length) S.types=TYPES.map(t=>t[0]); S.pos=0; ORDER=null; save(); render(); };
+HANDLERS.alltypes = ()=>{ S.types=TYPES.map(t=>t[0]); S.pos=0; ORDER=null; save(); render(); };
 HANDLERS.preset = b=>{ const v=b.dataset.p; S.topics = v==='all' ? TOPICS.map(t=>t[0]) : v==='none' ? [] : [...COVERED]; if(v!=='none') S.types=TYPES.map(t=>t[0]); S.pos=0; ORDER=null; save(); render(); };
 
 /* ---------- practice ---------- */
@@ -650,7 +663,14 @@ function examRun(){
   return h;
 }
 HANDLERS.submit = ()=>submitExam();
-HANDLERS.quit = ()=>{ EXAM=null; render(true); };
+function examActive(){ return EXAM && !EXAM.submitted; }
+function askLeave(go){
+  const m=document.createElement('div'); m.className='modal';
+  m.innerHTML='<div role="dialog" aria-modal="true"><b>לצאת מהמבחן?</b><p>המבחן יסתיים, והתשובות שסימנתם לא יישמרו.</p><div class="bar"><button class="btn" data-x="1">יציאה מהמבחן</button><button class="btn ghost" data-x="0">חזרה למבחן</button></div></div>';
+  m.addEventListener('click',e=>{ const x=e.target.dataset.x; if(x===undefined && e.target!==m) return; m.remove(); if(x==='1'){ EXAM=null; clearInterval(window.__t); go(); } });
+  document.body.appendChild(m); m.querySelector('[data-x="0"]').focus();
+}
+HANDLERS.quit = ()=>{ if(examActive()) askLeave(()=>render(true)); else { EXAM=null; render(true); } };
 function submitExam(){
   if(!EXAM || EXAM.submitted) return; EXAM.submitted = true;
   document.querySelectorAll('#examlist .qcard').forEach(art=>{
@@ -734,11 +754,28 @@ HANDLERS.resetyes = ()=>{ S.results={}; S.marked=[]; save(); render(); };
 HANDLERS.resetno = ()=>render();
 
 /* ---------- router ---------- */
-const VIEWS = {practice, exam:examView, browse, progress};
+function home(){
+  const done=Object.keys(S.results).filter(id=>QID[id]).length, ok=Object.keys(S.results).filter(id=>QID[id]&&S.results[id].s>=1).length;
+  const tiles=[['practice','תרגול','שאלות מכל המבחנים בסדר אקראי, לפי נושא וסוג. כמה שאלות בעמוד – לבחירתכם.'],
+    ['exam','סימולציית מבחן','מבחן מקורי מלא או מבחן אקראי, עם טיימר וציון בסוף.'],
+    ['browse','כל המאגר','כל השאלות לפי מבחן, עם הפתרונות המלאים וחיפוש.'],
+    ['progress','התקדמות','מה כבר פתרתם, איפה טעיתם ובאיזה נושא כדאי להתמקד.']];
+  let h='<h1>תרגול מבחנים במערכות הפעלה</h1><p class="lede">'+Q.length+' שאלות מ-'+B.exams.length+' מבחנים של הקורס, כל אחת עם פתרון מלא ומנומק. בהתחלה מוצגים רק הנושאים שכבר נלמדו – אפשר להוסיף נושאים בסינון.</p>';
+  h+='<div class="tiles">'+tiles.map(t=>`<a class="tile" href="#${t[0]}"><b>${t[1]}</b><span>${t[2]}</span></a>`).join('')+'</div>';
+  h+=`<div class="panel homestat">${done?`פתרתם עד עכשיו ${done} שאלות, מתוכן ${ok} נכון לגמרי.`:'עוד לא פתרתם אף שאלה – אפשר להתחיל בתרגול.'} <a href="${STUDY}" target="_blank" rel="noopener">לאתר הלימוד ←</a></div>`;
+  return h;
+}
+var CURVIEW = 'home';
+document.getElementById('studylink').href = STUDY;
+const VIEWS = {home, practice, exam:examView, browse, progress};
 function render(top){
   let v = location.hash.slice(1);
+  if(v.startsWith('t=')){ const t=decodeURIComponent(v.slice(2)); history.replaceState(null,'','#practice');
+    if(TNAME[t]){ S.topics=[t]; S.types=TYPES.map(x=>x[0]); S.only='all'; S.pos=0; ORDER=null; S.order=null; save(); } v='practice'; }
   if(v.startsWith('q=')){ const id=decodeURIComponent(v.slice(2)); history.replaceState(null,'','#practice'); if(QID[id]) return openQ(id); v='practice'; }
+  if(!v) v='home';
   if(!VIEWS[v]) v='practice';
+  CURVIEW = v;
   document.querySelectorAll('nav.tabs a').forEach(a=>a.setAttribute('aria-current', a.dataset.view===v?'page':'false'));
   const app=document.getElementById('app'); app.innerHTML = VIEWS[v]();
   if(v==='browse'){ fillBrowse(); const s=document.getElementById('bq'); s.addEventListener('input',()=>{ QUERY=s.value; clearTimeout(window.__bt); window.__bt=setTimeout(fillBrowse,200); }); }
@@ -746,7 +783,15 @@ function render(top){
   app.querySelectorAll('.myans textarea').forEach(t=>{ if(t.value) grow(t); });
   if(top) window.scrollTo(0,0);
 }
-window.addEventListener('hashchange',()=>render(true));
+
+window.addEventListener('hashchange',()=>{
+  const to = location.hash.slice(1)||'home';
+  if(CURVIEW==='exam' && to!=='exam' && EXAM){
+    if(examActive()){ history.replaceState(null,'','#exam'); askLeave(()=>{ location.hash=to; }); return; }
+    EXAM=null; // a submitted exam is closed when leaving; the exam tab then opens the exam menu
+  }
+  CURVIEW = to; render(true);
+});
 render();
 </script>
 

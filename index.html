@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <style>[hidden]{display:none!important}img{max-width:100%}</style>
 <script data-goatcounter="https://eliorch.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
-<!-- mta-theme --><link rel="stylesheet" href="../main/site-theme.css"><script src="../main/site-theme.js" data-course="os" data-fam="osq" data-footer="body"></script><!-- /mta-theme -->
+<!-- mta-theme --><link rel="stylesheet" href="../main/site-theme.css"><script src="../main/site-theme.js" data-course="os" data-fam="osq" data-footer="body"></script><script src="../main/site-feedback.js" data-repo="osque" data-course="מערכות הפעלה" data-decorate="0"></script><!-- /mta-theme -->
 </head>
 <body>
 <title>תרגול מבחנים במערכות הפעלה</title>
@@ -569,6 +569,7 @@ function qText(q, withSol){
 }
 function qHead(q){ return `שאלה ${q.num} במבחן ${q.examLabel} (${q.date})`; }
 function fbPanel(q,k){
+  if(k==='report' && window.MTAReport) return window.MTAReport.panel();
   if(k==='report') return `<div class="fb" data-k="report"><h4>דיווח על בעיה בשאלה</h4>
     <label>מה לא בסדר? (טעות בפתרון, נתון חסר, ניסוח לא ברור...)<textarea rows="3" class="fbt"></textarea></label>
     <div class="bar"><a class="btn" data-act="fbgh" target="_blank" rel="noopener" href="#">שליחה דרך GitHub</a><button class="btn ghost" data-act="fbcopy">העתקת הדיווח</button><button class="btn ghost" data-act="fbclose">סגירה</button></div>
@@ -617,8 +618,18 @@ function copyText(t, msgEl){
 }
 HANDLERS.fbopen = b=>{ const art=b.closest('.qcard'), q=QID[art.dataset.id], slot=art.querySelector('.fbslot'), k=b.dataset.k;
   const cur=slot.querySelector('.fb'); if(cur && cur.dataset.k===k){ slot.innerHTML=''; return; }
-  slot.innerHTML=fbPanel(q,k); if(k==='ask') updPrev(slot.querySelector('.fb')); slot.querySelector('.fbt').focus(); };
+  slot.innerHTML=fbPanel(q,k); if(k==='ask') updPrev(slot.querySelector('.fb')); (slot.querySelector('.fbt, .mta-fbt')||{focus(){}}).focus(); };
 HANDLERS.fbclose = b=>{ b.closest('.fbslot').innerHTML=''; };
+/* the shared report panel (site-feedback.js) sends straight to the ops inbox */
+document.addEventListener('click', e=>{
+  const b=e.target.closest && e.target.closest('.qcard [data-fb]'); if(!b) return;
+  const art=b.closest('.qcard'), q=QID[art.dataset.id], box=art.querySelector('.mta-fb');
+  if(b.dataset.fb==='close'){ e.preventDefault(); art.querySelector('.fbslot').innerHTML=''; return; }
+  if(b.dataset.fb==='send'){ e.preventDefault();
+    window.MTAReport.send({ site:'osque', course:'מערכות הפעלה', qid:q.id, qlabel:qHead(q), kind:'שאלה', url:SITE+'#q='+q.id,
+      problem:box.querySelector('.mta-fbt').value.trim(), question:qText(q,false), solution:qText(q,true).slice(qText(q,false).length).trim(),
+      name:box.querySelector('.mta-fbname').value.trim(), email:box.querySelector('.mta-fbmail').value.trim(), year:box.querySelector('.mta-fbyear').value }, box); }
+});
 HANDLERS.fbcopy = b=>{ const art=b.closest('.qcard'); copyText(fbText(art,QID[art.dataset.id]), art.querySelector('.fbmsg')); };
 HANDLERS.fbgh = b=>{ const art=b.closest('.qcard'), q=QID[art.dataset.id], t=art.querySelector('.fbt').value.trim();
   let body=fbText(art,q); while(encodeURIComponent(body).length>6500) body=body.slice(0,Math.floor(body.length*0.85));

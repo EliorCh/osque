@@ -572,7 +572,7 @@ function fbPanel(q,k){
   if(k==='report') return `<div class="fb" data-k="report"><h4>דיווח על בעיה בשאלה</h4>
     <label>מה לא בסדר? (טעות בפתרון, נתון חסר, ניסוח לא ברור...)<textarea rows="3" class="fbt"></textarea></label>
     <div class="bar"><a class="btn" data-act="fbgh" target="_blank" rel="noopener" href="#">שליחה דרך GitHub</a><button class="btn ghost" data-act="fbcopy">העתקת הדיווח</button><button class="btn ghost" data-act="fbclose">סגירה</button></div>
-    <p class="hint">השליחה פותחת דיווח חדש (issue) באתר GitHub, עם פרטי השאלה כבר בפנים, ואני מקבל עליו התראה. צריך חשבון GitHub. אין חשבון? אפשר להעתיק ולשלוח בכל דרך אחרת.</p><div class="fbmsg"></div></div>`;
+    <p class="hint">השליחה פותחת דיווח חדש (issue) באתר GitHub, עם פרטי השאלה כבר בפנים, ואני מקבל עליו התראה. צריך חשבון GitHub. אפשר גם להעתיק את הדיווח ולשלוח אותו במייל ל־<a href="mailto:eliorchen@gmail.com" dir="ltr">eliorchen@gmail.com</a>.</p><div class="fbmsg"></div></div>`;
   const hasMine = q.type==='open' && Object.keys(ANS[q.id]||{}).length;
   let name=''; try{ name=localStorage.getItem('os-mta-name')||''; }catch(e){}
   return `<div class="fb" data-k="ask"><h4>מייל למרצה על השאלה</h4>

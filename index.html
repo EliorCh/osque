@@ -137,6 +137,7 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center}
 .tag.topic{background:color-mix(in srgb,var(--tc) 28%,var(--surface));color:color-mix(in srgb,var(--tc) 30%,var(--ink));font-weight:600}
 .chip.tc[aria-pressed="true"]{background:color-mix(in srgb,var(--tc) 30%,var(--surface));border-color:var(--tc)}
 .tag.exam{font-family:var(--f-mono);background:var(--ink);color:var(--surface);font-weight:600}
+.tag.conv{background:#ccfbf1;color:#115e59;font-weight:600}
 .tag.type{background:var(--accent-soft);color:var(--ink)}
 .acts{margin-inline-start:auto;display:inline-flex;flex-wrap:wrap;gap:6px;align-items:center}
 .star{border:1px solid var(--line);background:none;font:inherit;font-size:.8rem;border-radius:6px;padding:1px 8px;cursor:pointer;color:var(--ink-2)}
@@ -222,7 +223,7 @@ select,input[type=search]{font:inherit;border:1px solid var(--line);border-radiu
 </div></header>
 <main class="wrap" id="app"></main>
 
-<script src="bank.js?v=a403269f"></script>
+<script src="bank.js?v=77dab72f"></script>
 <script>
 function escapeHtml(s) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -409,8 +410,8 @@ function repLine(q, mode){
 function card(q, mode, n){
   const marked = S.marked.includes(q.id);
   let h = `<article class="qcard" data-id="${esc(q.id)}">
-   <div class="qhead">${n?`<span class="tag">שאלה ${n}</span>`:''}<span class="tag exam" title="${esc(q.examLabel)}, ${esc(q.date)}">${esc(q.exam)} · שאלה ${esc(q.num)}</span>
-   <span class="tag topic t-${q.topic}">${esc(TNAME[q.topic])}${q.sub?' · '+renderText(q.sub):''}</span><span class="tag type">${TYPENAME[q.type]}</span>
+   <div class="qhead">${n?`<span class="tag">שאלה ${n}</span>`:''}<span class="tag exam" title="${esc(q.examLabel)}, ${esc(q.date)}">${esc(q.exam)} · שאלה ${esc(q.numDisp||q.num)}</span>
+   ${q.conv?'<span class="tag conv" title="במבחן המקורי זו הייתה שאלה פתוחה. כך המרצה הופך שאלות פתוחות לשאלות לבוחן.">גרסה אמריקאית</span>':''}<span class="tag topic t-${q.topic}">${esc(TNAME[q.topic])}${q.sub?' · '+renderText(q.sub):''}</span><span class="tag type">${TYPENAME[q.type]}</span>
    <span class="acts">${mode==='exam'?'':'<button class="fbb" data-act="fbopen" data-k="report" title="דיווח על טעות או בעיה בשאלה">⚑ דיווח</button><button class="fbb" data-act="fbopen" data-k="ask" title="הכנת הודעה למרצה עם כל נתוני השאלה">✉ שאלה למרצה</button>'}
    <button class="star" data-act="mark" aria-pressed="${marked}">${marked?'★ מסומנת':'☆ סמן לחזרה'}</button></span></div><div class="fbslot"></div>`;
   if(q.rep) h += repLine(q, mode);
@@ -431,7 +432,7 @@ function card(q, mode, n){
     });
     h += '<div class="slot final"></div>';
   }
-  h += `<div class="src">מקור: ${esc(q.examLabel)} (${esc(q.date)}) · שאלה ${esc(q.num)}</div></article>`;
+  h += `<div class="src">מקור: ${esc(q.examLabel)} (${esc(q.date)}) · שאלה ${esc(q.numDisp||q.num)}${q.conv?' (במקור שאלה פתוחה)':''}</div></article>`;
   return h;
 }
 const ORD = {};
@@ -452,7 +453,7 @@ function solClosed(q, chosenOk){
 }
 function common(q, withOfficial){
   let h='';
-  if(q.expl) h+=`<div><h4>הסבר</h4>${rich(q.expl)}</div>`;
+  if(q.expl) h+=`<div><h4>${q.conv?'הפתרון המלא':'הסבר'}</h4>${q.etree?richT(q.expl,q.etree):rich(q.expl)}</div>`;
   if(q.note) h+=`<div class="note"><b>הערה על הפתרון הרשמי</b>${rich(q.note)}</div>`;
   if(withOfficial && q.official) h+=`<details class="off"><summary>הפתרון הרשמי של הקורס</summary>${rich(q.official)}</details>`;
   if(q.check) h+=`<div class="check">✓ ${renderText(q.check)}</div>`;
@@ -718,9 +719,16 @@ function quizView(){
     <div class="bar"><label for="qtime">זמן:</label><select id="qtime"><option value="30" selected>חצי שעה</option><option value="45">45 דקות (תוספת זמן)</option><option value="0">בלי טיימר</option></select>
       <button class="btn" data-act="startquiz">להתחיל בוחן ←</button>
       <span class="pnum">${Q.filter(q=>S.qtopics.includes(q.topic)&&q.type!=='open').length} שאלות סגורות במאגר שנבחר</span></div></div>
+    <div class="panel" style="display:grid;gap:10px;margin-top:14px"><h2 style="margin:0">בלי סימולציה</h2>
+      <p class="lede" style="margin:0">כל ${Q.filter(isQuizQ).length} השאלות שמתאימות לבוחן 1, כולל ${Q.filter(q=>isQuizQ(q)&&q.conv).length} גרסאות אמריקאיות של שאלות פתוחות ממבחני עבר.</p>
+      <div class="bar" style="margin:0"><button class="btn ghost" data-act="quizbrowse">גלישה בשאלות, עם הפתרונות ←</button><button class="btn ghost" data-act="quizpractice">תרגול אחת-אחת, בלי טיימר ←</button></div></div>
     <p class="lede" style="margin-top:14px">בוחן 1 בכיתה הוא על וירטואליזציה: תהליכים, תזמון וזיכרון וירטואלי. בוחן 2 יהיה על מקביליות (חוטים, מנעולים וסנכרון).</p>`;
   return h;
 }
+function isQuizQ(q){ return VIRT.includes(q.topic) && q.type!=='open'; }
+HANDLERS.bquiz = b=>{ S.bquiz = b.dataset.v==='1'; save(); render(); };
+HANDLERS.quizbrowse = ()=>{ S.bquiz=true; save(); location.hash='browse'; };
+HANDLERS.quizpractice = ()=>{ S.topics=[...VIRT]; S.types=['mcq','tf']; S.only='all'; S.pos=0; ORDER=null; S.order=null; save(); location.hash='practice'; };
 HANDLERS.qtopic = b=>{ toggle(S.qtopics,b.dataset.v); save(); render(); };
 HANDLERS.qpreset = b=>{ S.qtopics = b.dataset.p==='all' ? TOPICS.map(t=>t[0]) : [...VIRT]; save(); render(); };
 HANDLERS.startquiz = ()=>{
@@ -734,10 +742,10 @@ HANDLERS.startquiz = ()=>{
   EXAM = {qs:pick.map(q=>q.id), title:'סימולציית בוחן', kind:'quiz', submitted:false, end: t? Date.now()+t*60000 : 0};
   location.hash='exam'; render(true); tick();
 };
-HANDLERS.startreal = ()=>{ const c=document.getElementById('exsel').value; startExam(Q.filter(q=>q.exam===c), 'מבחן '+c+' · '+B.exams.find(e=>e.code===c).label); };
+HANDLERS.startreal = ()=>{ const c=document.getElementById('exsel').value; startExam(Q.filter(q=>q.exam===c && !q.conv), 'מבחן '+c+' · '+B.exams.find(e=>e.code===c).label); };
 HANDLERS.startrand = ()=>{
   const pool = Q.filter(q=>S.topics.includes(q.topic));
-  const closed = shuffle(pool.filter(q=>q.type!=='open')).slice(0,5), open = shuffle(pool.filter(q=>q.type==='open')).slice(0,3);
+  const closed = shuffle(pool.filter(q=>q.type!=='open' && !q.conv)).slice(0,5), open = shuffle(pool.filter(q=>q.type==='open')).slice(0,3);
   if(!closed.length && !open.length) return;
   startExam(closed.concat(open), 'מבחן אקראי');
 };
@@ -813,13 +821,16 @@ function tick(){
 /* ---------- browse ---------- */
 let QUERY='';
 function browse(){
-  let h = '<h1>כל השאלות במאגר</h1><p class="lede">כל השאלות לפי מבחן, עם הפתרון המלא. שימושי לחזרה לפני המבחן. הסינון לפי נושא וסוג חל גם כאן.</p>'+filtersHTML(false);
+  let h = '<h1>כל השאלות במאגר</h1><p class="lede">כל השאלות לפי מבחן, עם הפתרון המלא. שימושי לחזרה לפני המבחן. הסינון לפי נושא וסוג חל גם כאן.</p>';
+  h += `<div class="frow" style="margin-bottom:10px"><span class="flabel">הצג</span><button class="chip" data-act="bquiz" data-v="0" aria-pressed="${!S.bquiz}">כל השאלות</button><button class="chip" data-act="bquiz" data-v="1" aria-pressed="${!!S.bquiz}">רק שאלות לבוחן 1</button></div>`;
+  if(S.bquiz) h += '<div class="notice">מוצגות רק שאלות סגורות בנושאי בוחן 1 (וירטואליזציה): אמריקאיות, נכון/לא נכון, וגרסאות אמריקאיות של שאלות פתוחות. <button class="lnk" data-act="bquiz" data-v="0">הצג הכל</button></div>';
+  h += S.bquiz ? '' : filtersHTML(false);
   h += `<div class="bar"><input type="search" id="bq" placeholder="חיפוש בשאלות (למשל fork, RAID, TLB)" value="${esc(QUERY)}" style="flex:1;min-width:0"></div><div id="blist"></div>`;
   return h;
 }
 function fillBrowse(){
   const ql = QUERY.trim().toLowerCase();
-  const list = Q.filter(q=> S.topics.includes(q.topic) && S.types.includes(q.type) && (!ql || JSON.stringify(q).toLowerCase().includes(ql)));
+  const list = Q.filter(q=> (S.bquiz ? isQuizQ(q) : (S.topics.includes(q.topic) && S.types.includes(q.type))) && (!ql || JSON.stringify(q).toLowerCase().includes(ql)));
   const by = {}; list.forEach(q=>(by[q.exam]=by[q.exam]||[]).push(q));
   const el=document.getElementById('blist');
   if(!list.length){ el.innerHTML='<div class="panel empty"><b>אין שאלות תואמות</b><br>נסה חיפוש אחר, או בחר נושאים נוספים.</div>'; return; }

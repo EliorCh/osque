@@ -213,6 +213,7 @@ select,input[type=search]{font:inherit;border:1px solid var(--line);border-radiu
   <a class="brand" href="#home" title="לעמוד הראשי">מערכות הפעלה <small>31 מבחנים · 242 שאלות</small></a>
   <nav class="tabs" aria-label="מצבי עבודה">
     <a href="#practice" data-view="practice">תרגול</a>
+    <a href="#quiz" data-view="quiz">בוחן</a>
     <a href="#exam" data-view="exam">סימולציית מבחן</a>
     <a href="#browse" data-view="browse">גלישה במאגר</a>
     <a href="#progress" data-view="progress">התקדמות</a>
@@ -705,6 +706,34 @@ function examView(){
       <button class="btn" data-act="startrand">להתחיל מבחן אקראי ←</button></div></div>`;
   return h;
 }
+/* ---------- quiz simulation: like the in-class quiz (5 closed questions, 30 minutes) ---------- */
+const VIRT = ['intro','process','sched','signals','redir','memory'];   // quiz 1 = the virtualization unit
+function quizView(){
+  if(!S.qtopics) S.qtopics=[...VIRT];
+  const closed = t => Q.filter(q=>q.topic===t && q.type!=='open').length;
+  let h = '<h1>סימולציית בוחן</h1><p class="lede">כמו הבוחן בכיתה: 5 שאלות סגורות, חצי שעה. כל השאלות לקוחות ממבחני עבר של הקורס. התשובות נחשפות רק כשמסיימים, ומי שעונה נכון על 3 מתוך 5 עובר את רף הבונוס.</p>';
+  h += `<div class="panel" style="display:grid;gap:14px">
+    <div class="frow"><span class="flabel">נושאים</span>${TOPICS.map(t=>`<button class="chip tc t-${t[0]}${VIRT.includes(t[0])?'':' later'}" data-act="qtopic" data-v="${t[0]}" aria-pressed="${S.qtopics.includes(t[0])}">${esc(t[1])}<span class="n">${closed(t[0])}</span></button>`).join('')}</div>
+    <div class="frow"><span class="flabel">בחירה מהירה</span><button class="chip" data-act="qpreset" data-p="virt">בוחן 1 · וירטואליזציה</button><button class="chip" data-act="qpreset" data-p="all">כל הנושאים</button></div>
+    <div class="bar"><label for="qtime">זמן:</label><select id="qtime"><option value="30" selected>חצי שעה</option><option value="45">45 דקות (תוספת זמן)</option><option value="0">בלי טיימר</option></select>
+      <button class="btn" data-act="startquiz">להתחיל בוחן ←</button>
+      <span class="pnum">${Q.filter(q=>S.qtopics.includes(q.topic)&&q.type!=='open').length} שאלות סגורות במאגר שנבחר</span></div></div>
+    <p class="lede" style="margin-top:14px">בוחן 1 בכיתה הוא על וירטואליזציה: תהליכים, תזמון וזיכרון וירטואלי. בוחן 2 יהיה על מקביליות (חוטים, מנעולים וסנכרון).</p>`;
+  return h;
+}
+HANDLERS.qtopic = b=>{ toggle(S.qtopics,b.dataset.v); save(); render(); };
+HANDLERS.qpreset = b=>{ S.qtopics = b.dataset.p==='all' ? TOPICS.map(t=>t[0]) : [...VIRT]; save(); render(); };
+HANDLERS.startquiz = ()=>{
+  const pool = shuffle(Q.filter(q=>S.qtopics.includes(q.topic) && q.type!=='open'));
+  if(pool.length<5){ toast('צריך לבחור נושאים עם לפחות 5 שאלות סגורות'); return; }
+  // spread over topics: at most 2 questions from the same topic while that is possible
+  const pick=[], per={};
+  for(const q of pool){ if(pick.length===5) break; if((per[q.topic]||0)<2){ pick.push(q); per[q.topic]=(per[q.topic]||0)+1; } }
+  for(const q of pool){ if(pick.length===5) break; if(!pick.includes(q)) pick.push(q); }
+  const t = +document.getElementById('qtime').value;
+  EXAM = {qs:pick.map(q=>q.id), title:'סימולציית בוחן', kind:'quiz', submitted:false, end: t? Date.now()+t*60000 : 0};
+  location.hash='exam'; render(true); tick();
+};
 HANDLERS.startreal = ()=>{ const c=document.getElementById('exsel').value; startExam(Q.filter(q=>q.exam===c), 'מבחן '+c+' · '+B.exams.find(e=>e.code===c).label); };
 HANDLERS.startrand = ()=>{
   const pool = Q.filter(q=>S.topics.includes(q.topic));
@@ -759,6 +788,12 @@ function updateExamScore(){
     if(q.type==='open'){ const s=openScore(art); if(s===null) pending++; else got+=25*s; } else got+= art.dataset.ok==='1'?5:0;
   });
   const pct = Math.round(100*got/max);
+  if(EXAM.kind==='quiz'){
+    const ok=[...document.querySelectorAll('#examlist .qcard')].filter(a=>a.dataset.ok==='1').length;
+    if(!EXAM.saved){ EXAM.saved=true; (S.qhist=S.qhist||[]).push({ok,t:Date.now()}); save(); }
+    document.getElementById('exscore').innerHTML = `<span class="score">${ok}</span> / 5 נכונות <span class="emsg">${ok>=3?'עברת את רף הבונוס (3 מתוך 5).':'עוד לא ברף הבונוס (3 מתוך 5). חזור על השאלות שטעית בהן ונסה בוחן נוסף.'}</span> <button class="btn ghost" data-act="againquiz">בוחן נוסף ←</button>`;
+    return;
+  }
   const msg = pct>=90?'מצוין! אתה מוכן למבחן.':pct>=75?'יפה מאוד. חזור על השאלות שטעית בהן.':pct>=60?'עברת! אך יש מקום לשיפור.':'יש לעבוד יותר. נסה תרגול לפי נושא.';
   if(!pending && !EXAM.saved){ EXAM.saved=true; (S.exhist=S.exhist||[]).push({s:pct,t:Date.now()}); save(); }
   document.getElementById('exscore').innerHTML = `ציון: <span class="score">${pct}</span> / 100 ` + (pending?'':`<span class="emsg">${msg}</span> `) + (pending?`<span class="pnum">(חסר דירוג עצמי ב-${pending} שאלות פתוחות – לחץ "הצג פתרון" בכל סעיף ודרג את עצמך)</span>`:'');
@@ -835,6 +870,7 @@ function home(){
   if(weak.length) h+=`<section class="weak"><h2>◐ נושאים שכדאי לחזק</h2><div style="font-size:.85rem;color:var(--ink-2)">לפי הביצועים שלך עד עכשיו — דיוק מתחת ל-<span class="ltr">70%</span></div><div class="wl">${weak.map(([t,v])=>`<button class="wi tbadge t-${t}" data-act="topicgo" data-v="${t}"><b>${esc(TNAME[t])}</b><small><span class="ltr">${Math.round(100*v.s/v.n)}%</span> דיוק · ${v.n} שאלות</small><div class="bar2"><i style="width:${Math.round(100*v.s/v.n)}%"></i></div></button>`).join('')}</div></section>`;
   const modes=[
     ['practice','t-process','◉','תרגול לפי נושא','סינון לפי נושא וסוג שאלה. בלי לחץ זמן, עם פתרון מלא ומנומק אחרי כל שאלה.','לבחור נושא ←','#practice'],
+    ['quiz','t-sched','✎','סימולציית בוחן','כמו הבוחן בכיתה: 5 שאלות סגורות ממבחני עבר, חצי שעה. ברירת המחדל: נושאי בוחן 1 (וירטואליזציה).','להתחיל בוחן ←','#quiz'],
     ['exam','t-threads','⏱','סימולציית מבחן','מבחן מקורי מלא או מבחן אקראי (5 סגורות ו-3 פתוחות), עם טיימר וציון בסוף.','להתחיל מבחן ←','#exam'],
     ['browse','t-redir','≡','גלישה במאגר','צפייה בכל השאלות במאגר, מסודרות לפי מבחן, עם הפתרונות וחיפוש. שימושי לחזרה לפני המבחן.','לסקור שאלות ←','#browse'],
     ['wrong','t-sched','★','טעויות ומסומנות','שאלות שטעית בהן ושאלות שסימנת לחזרה – תרגול ממוקד במה שעוד לא יושב.','לראות מסומנות ←',null],
@@ -856,7 +892,8 @@ HANDLERS.topicgo = b=>{ S.topics=[b.dataset.v]; S.types=TYPES.map(t=>t[0]); S.on
 HANDLERS.wronggo = ()=>{ S.topics=TOPICS.map(t=>t[0]); S.types=TYPES.map(t=>t[0]); S.only='review'; S.pos=0; ORDER=null; save(); location.hash='practice'; };
 var CURVIEW = 'home';
 document.getElementById('studylink').href = STUDY;
-const VIEWS = {home, practice, exam:examView, browse, progress};
+HANDLERS.againquiz = ()=>{ EXAM=null; location.hash='quiz'; };
+const VIEWS = {home, practice, exam:examView, quiz:quizView, browse, progress};
 function render(top){
   let v = location.hash.slice(1);
   if(v.startsWith('t=')){ const t=decodeURIComponent(v.slice(2)); history.replaceState(null,'','#practice');
@@ -865,7 +902,8 @@ function render(top){
   if(!v) v='home';
   if(!VIEWS[v]) v='practice';
   CURVIEW = v;
-  document.querySelectorAll('nav.tabs a').forEach(a=>a.setAttribute('aria-current', a.dataset.view===v?'page':'false'));
+  const nv = (v==='exam' && EXAM && EXAM.kind==='quiz') ? 'quiz' : v;
+  document.querySelectorAll('nav.tabs a').forEach(a=>a.setAttribute('aria-current', a.dataset.view===nv?'page':'false'));
   const app=document.getElementById('app'); app.innerHTML = (v==='home' || (v==='exam' && EXAM) ? '' : '<a class="back" href="#home">→ חזרה לדף הבית</a>') + VIEWS[v]();
   if(v==='browse'){ fillBrowse(); const s=document.getElementById('bq'); s.addEventListener('input',()=>{ QUERY=s.value; clearTimeout(window.__bt); window.__bt=setTimeout(fillBrowse,200); }); }
   if(v==='exam' && EXAM){ updateExamScore(); }

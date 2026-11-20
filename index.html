@@ -223,7 +223,7 @@ select,input[type=search]{font:inherit;border:1px solid var(--line);border-radiu
 </div></header>
 <main class="wrap" id="app"></main>
 
-<script src="bank.js?v=77dab72f"></script>
+<script src="bank.js?v=750376e7"></script>
 <script>
 function escapeHtml(s) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -388,10 +388,10 @@ function esc(s){ return escapeHtml(String(s)).replace(/"/g,'&quot;'); }
 
 /* ---------- filtering ---------- */
 function onlyOk(q){
-  return S.only==='all' || (S.only==='wrong' && S.results[q.id] && S.results[q.id].s<1) || (S.only==='new' && !S.results[q.id]) || (S.only==='marked' && S.marked.includes(q.id)) || (S.only==='rep' && !!q.rep) || (S.only==='review' && ((S.results[q.id] && S.results[q.id].s<1) || S.marked.includes(q.id)));
+  return S.only==='all' || (S.only==='wrong' && S.results[q.id] && S.results[q.id].s<1) || (S.only==='new' && !S.results[q.id]) || (S.only==='marked' && S.marked.includes(q.id)) || (S.only==='rep' && !!q.rep) || (S.only==='q1' && isQuizQ(q)) || (S.only==='review' && ((S.results[q.id] && S.results[q.id].s<1) || S.marked.includes(q.id)));
 }
 function filtered(){ return Q.filter(q=> S.topics.includes(q.topic) && S.types.includes(q.type) && onlyOk(q)); }
-const ONLY = [['all','הכל'],['new','שלא ניסיתי'],['wrong','טעויות'],['marked','מסומנות ★'],['rep','חזרו במבחנים'],['review','טעויות ומסומנות']];
+const ONLY = [['all','הכל'],['new','שלא ניסיתי'],['wrong','טעויות'],['marked','מסומנות ★'],['rep','חזרו במבחנים'],['q1','בוחן 1'],['review','טעויות ומסומנות']];
 function shuffle(a,seed){ a=a.slice(); let r=seed||Math.random; for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
 function rng(seed){ let x=seed>>>0||1; return ()=>{ x^=x<<13; x^=x>>>17; x^=x<<5; return ((x>>>0)%100000)/100000; }; }
 
@@ -410,7 +410,7 @@ function repLine(q, mode){
 function card(q, mode, n){
   const marked = S.marked.includes(q.id);
   let h = `<article class="qcard" data-id="${esc(q.id)}">
-   <div class="qhead">${n?`<span class="tag">שאלה ${n}</span>`:''}<span class="tag exam" title="${esc(q.examLabel)}, ${esc(q.date)}">${esc(q.exam)} · שאלה ${esc(q.numDisp||q.num)}</span>
+   <div class="qhead">${n?`<span class="tag">שאלה ${n}</span>`:''}<span class="tag exam" title="${esc(q.examLabel)}, ${esc(q.date)}">${q.lec?'מההרצאה':esc(q.exam)} · שאלה ${esc(q.numDisp||q.num)}</span>${q.notq1?'<span class="tag">לא בבוחן 1</span>':''}
    ${q.conv?'<span class="tag conv" title="במבחן המקורי זו הייתה שאלה פתוחה. כך המרצה הופך שאלות פתוחות לשאלות לבוחן.">גרסה אמריקאית</span>':''}<span class="tag topic t-${q.topic}">${esc(TNAME[q.topic])}${q.sub?' · '+renderText(q.sub):''}</span><span class="tag type">${TYPENAME[q.type]}</span>
    <span class="acts">${mode==='exam'?'':'<button class="fbb" data-act="fbopen" data-k="report" title="דיווח על טעות או בעיה בשאלה">⚑ דיווח</button><button class="fbb" data-act="fbopen" data-k="ask" title="הכנת הודעה למרצה עם כל נתוני השאלה">✉ שאלה למרצה</button>'}
    <button class="star" data-act="mark" aria-pressed="${marked}">${marked?'★ מסומנת':'☆ סמן לחזרה'}</button></span></div><div class="fbslot"></div>`;
@@ -712,7 +712,7 @@ const VIRT = ['intro','process','sched','signals','redir','memory'];   // quiz 1
 function quizView(){
   if(!S.qtopics) S.qtopics=[...VIRT];
   const closed = t => Q.filter(q=>q.topic===t && q.type!=='open').length;
-  let h = '<h1>סימולציית בוחן</h1><p class="lede">כמו הבוחן בכיתה: 5 שאלות סגורות, חצי שעה. כל השאלות לקוחות ממבחני עבר של הקורס. התשובות נחשפות רק כשמסיימים, ומי שעונה נכון על 3 מתוך 5 עובר את רף הבונוס.</p>';
+  let h = '<h1>סימולציית בוחן</h1><p class="lede">כמו הבוחן בכיתה: 5 שאלות אמריקאיות, חצי שעה. התשובות נחשפות רק כשמסיימים, ומי שעונה נכון על 3 מתוך 5 עובר את רף הבונוס.</p><div class="notice"><b>היקף בוחן 1, לפי המרצה (הרצאה 7, 19.11):</b> כל מה שנלמד עד עכשיו, כולל התרגולים. בזיכרון וירטואלי: עד Swapping ו-page fault כולל, <b>בלי</b> מדיניות ההחלפה (OPT, FIFO, LRU, Clock). שאלות על מדיניות החלפה לא נכנסות כאן לבוחן כשבוחרים רק את נושאי בוחן 1, ומסומנות „לא בבוחן 1”. בוחני התרגול במודל ארוכים יותר (10 שאלות), אבל בבוחן עצמו יהיו 5.</div>';
   h += `<div class="panel" style="display:grid;gap:14px">
     <div class="frow"><span class="flabel">נושאים</span>${TOPICS.map(t=>`<button class="chip tc t-${t[0]}${VIRT.includes(t[0])?'':' later'}" data-act="qtopic" data-v="${t[0]}" aria-pressed="${S.qtopics.includes(t[0])}">${esc(t[1])}<span class="n">${closed(t[0])}</span></button>`).join('')}</div>
     <div class="frow"><span class="flabel">בחירה מהירה</span><button class="chip" data-act="qpreset" data-p="virt">בוחן 1 · וירטואליזציה</button><button class="chip" data-act="qpreset" data-p="all">כל הנושאים</button></div>
@@ -720,19 +720,20 @@ function quizView(){
       <button class="btn" data-act="startquiz">להתחיל בוחן ←</button>
       <span class="pnum">${Q.filter(q=>S.qtopics.includes(q.topic)&&q.type!=='open').length} שאלות סגורות במאגר שנבחר</span></div></div>
     <div class="panel" style="display:grid;gap:10px;margin-top:14px"><h2 style="margin:0">בלי סימולציה</h2>
-      <p class="lede" style="margin:0">כל ${Q.filter(isQuizQ).length} השאלות שמתאימות לבוחן 1, כולל ${Q.filter(q=>isQuizQ(q)&&q.conv).length} גרסאות אמריקאיות של שאלות פתוחות ממבחני עבר.</p>
+      <p class="lede" style="margin:0">כל ${Q.filter(isQuizQ).length} השאלות שמתאימות לבוחן 1, כולל ${Q.filter(q=>isQuizQ(q)&&q.conv).length} גרסאות אמריקאיות של שאלות פתוחות ממבחני עבר ו-${Q.filter(q=>isQuizQ(q)&&q.lec).length} שאלות שנכתבו לפי ההרצאות.</p>
       <div class="bar" style="margin:0"><button class="btn ghost" data-act="quizbrowse">גלישה בשאלות, עם הפתרונות ←</button><button class="btn ghost" data-act="quizpractice">תרגול אחת-אחת, בלי טיימר ←</button></div></div>
     <p class="lede" style="margin-top:14px">בוחן 1 בכיתה הוא על וירטואליזציה: תהליכים, תזמון וזיכרון וירטואלי. בוחן 2 יהיה על מקביליות (חוטים, מנעולים וסנכרון).</p>`;
   return h;
 }
-function isQuizQ(q){ return VIRT.includes(q.topic) && q.type!=='open'; }
+function isQuizQ(q){ return VIRT.includes(q.topic) && q.type!=='open' && !q.notq1; }   // notq1: page-replacement policies, not in quiz 1 (lecture 7)
 HANDLERS.bquiz = b=>{ S.bquiz = b.dataset.v==='1'; save(); render(); };
 HANDLERS.quizbrowse = ()=>{ S.bquiz=true; save(); location.hash='browse'; };
-HANDLERS.quizpractice = ()=>{ S.topics=[...VIRT]; S.types=['mcq','tf']; S.only='all'; S.pos=0; ORDER=null; S.order=null; save(); location.hash='practice'; };
+HANDLERS.quizpractice = ()=>{ S.topics=[...VIRT]; S.types=['mcq','tf']; S.only='q1'; S.pos=0; ORDER=null; S.order=null; save(); location.hash='practice'; };
 HANDLERS.qtopic = b=>{ toggle(S.qtopics,b.dataset.v); save(); render(); };
 HANDLERS.qpreset = b=>{ S.qtopics = b.dataset.p==='all' ? TOPICS.map(t=>t[0]) : [...VIRT]; save(); render(); };
 HANDLERS.startquiz = ()=>{
-  const pool = shuffle(Q.filter(q=>S.qtopics.includes(q.topic) && q.type!=='open'));
+  const q1 = S.qtopics.every(t=>VIRT.includes(t));   // only quiz-1 topics chosen: leave out replacement policies
+  const pool = shuffle(Q.filter(q=>S.qtopics.includes(q.topic) && q.type!=='open' && !(q1 && q.notq1)));
   if(pool.length<5){ toast('צריך לבחור נושאים עם לפחות 5 שאלות סגורות'); return; }
   // spread over topics: at most 2 questions from the same topic while that is possible
   const pick=[], per={};
@@ -874,7 +875,7 @@ function home(){
   const nRep=Q.filter(q=>q.rep).length;
   let h='<div class="home"><header class="hero"><div class="hero-meta"><span>המכללה האקדמית תל אביב-יפו · בית הספר למדעי המחשב</span></div>';
   h+='<h1>מערכות הפעלה</h1><p>תרגול אינטראקטיבי למבחן · מבוסס על מבחנים אמיתיים משנים <span class="ltr">'+Math.min(...years)+'</span>–<span class="ltr">'+Math.max(...years)+'</span>, עם פתרון מלא ומנומק לכל שאלה</p>';
-  h+='<div class="hstats">'+[[Q.length,'שאלות במאגר'],[B.exams.length,'מבחנים'],[(S.exhist||[]).length?Math.max(...S.exhist.map(x=>x.s)):'–','הציון הגבוה'],[(S.exhist||[]).length?Math.round(S.exhist.reduce((a,x)=>a+x.s,0)/S.exhist.length):'–','ציון ממוצע'],[S.marked.length,'שאלות מסומנות']].map(x=>`<div class="hstat"><b>${x[0]}</b><span>${x[1]}</span></div>`).join('')+'</div></header>';
+  h+='<div class="hstats">'+[[Q.length,'שאלות במאגר'],[B.exams.filter(e=>e.code!=='LEC').length,'מבחנים'],[(S.exhist||[]).length?Math.max(...S.exhist.map(x=>x.s)):'–','הציון הגבוה'],[(S.exhist||[]).length?Math.round(S.exhist.reduce((a,x)=>a+x.s,0)/S.exhist.length):'–','ציון ממוצע'],[S.marked.length,'שאלות מסומנות']].map(x=>`<div class="hstat"><b>${x[0]}</b><span>${x[1]}</span></div>`).join('')+'</div></header>';
   // weak topics
   const per={}; Object.entries(S.results).forEach(([id,r])=>{ const q=QID[id]; if(!q) return; const t=per[q.topic]=per[q.topic]||{n:0,s:0}; t.n++; t.s+=r.s; });
   const weak=Object.entries(per).filter(([t,v])=>v.n>=3 && v.s/v.n<0.7).sort((a,b)=>a[1].s/a[1].n-b[1].s/b[1].n).slice(0,4);
@@ -896,7 +897,7 @@ function home(){
   h+='<section><h2 class="stitle">מבנה המבחן</h2><div class="igrid">'+[['שאלות סגורות','5 שאלות'],['ניקוד לסגורה','5 נקודות'],['שאלות פתוחות','3 שאלות'],['ניקוד לפתוחה','25 נקודות'],['סוגי שאלות','אמריקאיות, נכון/לא נכון, פתוחות']].map(x=>`<div class="icard"><small>${x[0]}</small><b>${x[1]}</b></div>`).join('')+
     '</div><p style="font-size:.82rem;color:var(--muted);margin:8px 0 0">זה המבנה ב-18 מתוך 31 המבחנים במאגר. בחלק מהמבחנים יש 4–5 שאלות פתוחות, ובמבחנים הישנים אין שאלות סגורות.</p></section>';
   const done=Object.keys(S.results).filter(id=>QID[id]).length;
-  h+=`<footer class="hfoot">האתר נבנה על בסיס ${B.exams.length} מבחנים אמיתיים של הקורס. כל פתרון נבדק – רבים מהם בהרצת קוד או בחישוב.<br>${done?`פתרת עד עכשיו ${done} שאלות. `:''}ההתקדמות נשמרת במכשיר שלך בלבד.</footer></div>`;
+  h+=`<footer class="hfoot">האתר נבנה על בסיס ${B.exams.filter(e=>e.code!=='LEC').length} מבחנים אמיתיים של הקורס, ועוד ${Q.filter(q=>q.lec).length} שאלות שנכתבו לפי ההרצאות. כל פתרון נבדק – רבים מהם בהרצת קוד או בחישוב.<br>${done?`פתרת עד עכשיו ${done} שאלות. `:''}ההתקדמות נשמרת במכשיר שלך בלבד.</footer></div>`;
   return h;
 }
 HANDLERS.topicgo = b=>{ S.topics=[b.dataset.v]; S.types=TYPES.map(t=>t[0]); S.only='all'; S.pos=0; ORDER=null; save(); location.hash='practice'; };
